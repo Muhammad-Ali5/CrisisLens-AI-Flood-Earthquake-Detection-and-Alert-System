@@ -1,0 +1,58 @@
+column_name,data_type,unit,description,primary_source
+date,date,YYYY-MM-DD,Observation date,Generated
+year,int,year,Calendar year,Generated
+month,int,1-12,Month of year,Generated
+day_of_year,int,1-366,Day of year,Generated
+season,str,category,Meteorological season (Winter/Pre-Monsoon/Monsoon/Post-Monsoon),Generated
+monsoon_indicator,int,0/1,1 = June–September monsoon period,PMD
+province,str,category,Administrative province,NDMA
+district,str,category,Administrative district,NDMA
+latitude,float,decimal degrees,District centroid latitude,OSM/GADM
+longitude,float,decimal degrees,District centroid longitude,OSM/GADM
+elevation_m,int,metres,Mean district elevation,SRTM/HydroSHEDS
+basin,str,category,Major river basin,HydroSHEDS
+river_system,str,category,Primary river / canal,FFD Pakistan
+daily_rainfall_mm,float,mm,Daily precipitation,CHIRPS/ERA5
+rainfall_3day_mm,float,mm,3-day cumulative rainfall,CHIRPS/ERA5
+rainfall_7day_mm,float,mm,7-day cumulative rainfall,CHIRPS/ERA5
+tmax_c,float,°C,Maximum daily temperature,ERA5
+tmin_c,float,°C,Minimum daily temperature,ERA5
+relative_humidity_pct,float,%,Relative humidity,ERA5
+wind_speed_kmh,float,km/h,Surface wind speed,ERA5
+soil_moisture_pct,float,%,Surface soil moisture,ERA5/SMAP
+river_discharge_m3s,float,m³/s,River discharge at district gauge,FFD/GRDC
+water_level_m,float,m,River water level,FFD
+flood_warning_stage,int,0-3,0=Normal 1=Watch 2=Warning 3=Danger,FFD/NDMA
+flood_warning_stage_label,str,category,Text label of warning stage,FFD/NDMA
+reservoir_level_pct,float,%,Upstream reservoir storage level,WAPDA
+streamflow_anomaly_pct,float,%,Deviation from long-term mean flow,GloFAS
+flood_extent_km2,float,km²,Estimated inundated area,Sentinel-1/SAR
+ndvi,float,-1 to 1,Normalized Difference Vegetation Index,MODIS/Sentinel-2
+ndwi,float,-1 to 1,Normalized Difference Water Index,MODIS/Sentinel-2
+sar_inundation_km2,float,km²,SAR-derived flood inundation area,Sentinel-1
+surface_water_occurrence_pct,float,%,Surface water occurrence probability,JRC Global Surface Water
+land_cover_type,str,category,Dominant land cover class,ESA CCI / MODIS
+population_density_km2,int,persons/km²,Population density,WorldPop
+built_up_area_pct,float,%,Built-up/urban area share,GHS-BUILT
+agricultural_land_pct,float,%,Agricultural land share,ESA CCI
+road_density_km_km2,float,km/km²,Road network density,OSM
+critical_infrastructure_count,int,count,"Critical facilities (hospitals, schools)",OSM/NDMA
+rainfall_anomaly_mm,float,mm,Daily rainfall minus long-term daily mean,CHIRPS
+antecedent_rainfall_index,float,mm,Weighted antecedent rainfall (7d×0.7 + 3d×0.3),Engineered
+rain_return_period_yr,float,years,Estimated return period of daily rainfall,Engineered
+discharge_change_rate_m3s,float,m³/s,Change in discharge from previous timestep,Engineered
+lag1_rainfall_mm,float,mm,1-day lagged rainfall,Engineered
+lag3_rainfall_mm,float,mm,3-day average lagged rainfall,Engineered
+lag7_rainfall_mm,float,mm,7-day average lagged rainfall,Engineered
+flood_occurrence,int,0/1,Binary flood label (TARGET VARIABLE),NDMA/EM-DAT
+flood_type,str,category,Flood classification (Riverine/Flash/Urban/GLOF/None),NDMA
+is_glof_event,int,0/1,Glacier Lake Outburst Flood flag,NDMA/PDMA-GB
+deaths,int,count,Reported deaths,NDMA/EM-DAT
+injured,int,count,Reported injuries,NDMA/EM-DAT
+displaced_persons,int,count,Displaced/evacuated population,NDMA/OCHA
+houses_damaged,int,count,Damaged/destroyed houses,NDMA/PDMA
+cropland_affected_ha,int,hectares,Cropland inundated,PDMA/FAO
+livestock_losses,int,count,Livestock lost,PDMA
+economic_loss_usd,int,USD,Estimated economic damage,NDMA/EM-DAT
+data_source,str,text,Primary data provenance,Multiple
+quality_flag,int,0/1,1 = passed QC checks,Generated
