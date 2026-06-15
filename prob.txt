@@ -1,0 +1,28 @@
+Simple Explanation of All Changes
+🔴 Problem 1 — Live Model Was Using Fake Mock Data
+Before: The live model just cycled through a hardcoded list of made-up sentences — nothing real was happening.
+
+Fix: The live model now pulls real earthquakes live from the USGS API (the same source used by governments worldwide) filtered for the Pakistan/Afghanistan region. Every earthquake that happens near Pakistan appears in the live feed within seconds. A second feed simulates Pakistan-specific disaster reports (floods, landslides, NDMA alerts).
+
+🔴 Problem 2 — Disaster Classifier Was Crashing Silently
+Before: The ML model expected 607 features (27 numeric + 580 text) but was only getting 580 features (text only) — so it silently failed and fell back to a very limited 8-keyword list.
+
+Fix: Fixed the feature mismatch by padding the missing 27 numeric features with zeros. Also expanded the keyword list from 8 words to 50+ words including "monsoon", "torrential", "cloudburst", "glof", "seismic", etc.
+
+🔴 Problem 3 — Severity Was Often Wrong
+Before: Used a simple keyword counter — "if 2 high-keywords found → High". This gave wrong results constantly.
+
+Fix: Added 3 smart signals in order:
+
+Extracts actual death counts from text ("12 killed" → High, "50+ dead" → Critical)
+Extracts earthquake magnitude numbers ("M 6.5" → Critical, "M 4.5" → Medium)
+Falls back to expanded keyword scoring with better logic
+🔴 Problem 4 — Fake News Detector Was Too Weak
+Before: Only flagged 8 very specific phrases. Real misinformation slipped through.
+
+Fix: Added credibility booster detection — if the text mentions NDMA, PDMA, Rescue 1122, Reuters, USGS, Dawn News etc., it's trusted more. Also added "share before they delete", "whatsapp forward", implausible number detection (>500,000 casualties), and dozens more suspicious phrases.
+
+🔴 Problem 5 — Location Extractor Missed Most Places
+Before: Only knew 24 locations.
+
+Fix: Now knows 80+ Pakistan cities and districts (all provinces, AJK, GB) with word-boundary matching so "Swat" doesn't accidentally match inside other words, and longest-match-first so "Dera Ismail Khan" beats "Khan".

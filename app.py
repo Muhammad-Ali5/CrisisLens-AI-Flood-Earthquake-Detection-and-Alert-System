@@ -9,7 +9,7 @@ from utils.location_extractor import extract_location
 from utils.severity_prediction import predict_severity
 from utils.fake_news_detection import detect_fake_news
 from utils.alert_engine import alert_engine
-from utils.gemini_relief_agent import generate_relief_plan
+from utils.gemini_relief_agent import generate_relief_plan, chat_with_assistant
 from utils.maps import map_manager
 
 
@@ -609,6 +609,10 @@ if "total_reports" not in st.session_state:
     st.session_state.total_reports = 1248
 if "active_alerts" not in st.session_state:
     st.session_state.active_alerts = 7
+if "assistant_messages" not in st.session_state:
+    st.session_state.assistant_messages = []
+if "incident_context" not in st.session_state:
+    st.session_state.incident_context = None
 
 
 # =========================================================
@@ -1041,6 +1045,49 @@ if st.session_state.analyzed and st.session_state.results:
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="briefing-container"><div class="briefing-section-body">{briefing}</div></div>', unsafe_allow_html=True)
+
+    # ── AI Assistant Chat (synced with dedicated AI Assistant page) ──
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <div class="section-icon si-blue">💬</div>
+        <div class="section-title">CrisisLens AI Assistant</div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption("Ask follow-up questions below, or open the **AI Assistant** page for the full experience.")
+
+    # Sync incident context to the shared state so the AI Assistant page picks it up
+    st.session_state.incident_context = {
+        "disaster":     r["disaster"],
+        "location":     r["location"],
+        "severity":     r["severity"],
+        "authenticity": r["authenticity"],
+        "report":       report_text,
+    }
+
+    for message in st.session_state.assistant_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Ask the assistant about this incident...", key="assistant_chat_postanalysis"):
+        st.session_state.assistant_messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Generating response..."):
+                try:
+                    context = st.session_state.incident_context
+                    reply = chat_with_assistant(
+                        user_message=prompt,
+                        chat_history=st.session_state.assistant_messages,
+                        context=context,
+                    )
+                except Exception as exc:
+                    reply = f"I could not generate a response right now. Error: {exc}"
+            st.markdown(reply)
+
+        st.session_state.assistant_messages.append({"role": "assistant", "content": reply})
 
     # ── Download briefing ──
     st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)

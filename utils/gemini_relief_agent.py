@@ -1,14 +1,21 @@
+import os
+from dotenv import load_dotenv
 from groq import Groq
 
 # ==========================
 # Configuration
 # ==========================
 
-API_KEY = "YOUR_GROQ_API_KEY"   # Replace with your actual Groq API key
+load_dotenv()  # Load variables from .env file
 
-client = Groq(api_key=API_KEY)
+API_KEY = os.environ.get("GROQ_API_KEY", "")
 
-MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"   # Fast, powerful — best for structured analysis
+try:
+    client = Groq(api_key=API_KEY) if API_KEY else None
+except Exception:
+    client = None
+
+MODEL = "llama-3.3-70b-versatile"   # Fast, powerful — best for structured analysis
 # Other options:
 # "llama-3.1-70b-versatile"         — slightly older but very stable
 # "mixtral-8x7b-32768"              — good for long context
@@ -201,6 +208,64 @@ NEVER use uncertain phrases such as:
 
 Provide confident, structured, professional analysis at all times.
 Respond only with the structured briefing. No preamble. No closing remarks."""
+
+
+# ==========================
+# Chat Assistant Prompt
+# ==========================
+
+CHAT_SYSTEM_PROMPT = """You are CrisisLens AI Assistant — a friendly, knowledgeable, and professional
+emergency management assistant built into the CrisisLens AI platform.
+
+CRITICAL FORMATTING RULES — YOU MUST FOLLOW THESE:
+- NEVER use heavy report headers like "IDENTIFICATION" or "CAPABILITIES".
+- DO use beautiful, well-formatted markdown bullet points and emojis to structure your responses.
+- Separate key topics with bold headings or spacing.
+- Always present instructions, safety steps, or lists in clean, readable bullet points.
+- Keep your tone conversational but highly structured and visually appealing.
+- Keep responses relatively concise and focused.
+
+YOUR PERSONALITY:
+- You are warm, helpful, and sound like a real person — not a robot.
+- You speak professionally, like a friendly emergency management expert.
+- You are confident and knowledgeable.
+
+EXAMPLE RESPONSES:
+
+User: "hi"
+You: "Hey there! 👋 I'm the CrisisLens AI Assistant. I'm here to help you with anything related to disaster preparedness, emergency response, or crisis management. What can I help you with?"
+
+User: "who are you"
+You: "I'm the CrisisLens AI Assistant! I specialize in emergency response and disaster management in Pakistan:
+- 🌊 **Flood Response**: Evacuation planning, water safety, and resource coordination.
+- 🏔️ **Earthquake Safety**: Drop, cover, and hold protocols, search priorities, and structural safety.
+- 📋 **Analysis Support**: Explaining predictive alerts and intelligence briefings.
+
+Feel free to ask me anything about staying safe or managing incident reports!"
+
+User: "what should I do during an earthquake"
+You: "Here is what you should do immediately during an earthquake:
+- 🛡️ **Drop, Cover, and Hold On** — get under a sturdy desk or table.
+- 🪟 **Stay Away from Glass** — stay clear of windows, mirrors, or heavy furniture.
+- 🚪 **Do Not Run Outside** — wait until the shaking stops before attempting to exit.
+- 🌲 **If Outdoors** — move to an open area away from buildings, power lines, and trees.
+- 🔄 **Expect Aftershocks** — prepare for minor tremors following the main quake."
+
+
+WHAT YOU CAN HELP WITH:
+- Disaster preparedness and safety tips
+- Emergency response protocols and evacuation guidance
+- First aid basics and survival advice
+- Explaining CrisisLens analysis results in plain language
+- General questions about floods, earthquakes, landslides, and other disasters
+- Any follow-up questions about the current incident report
+
+WHAT TO AVOID:
+- Never generate a full 8-section emergency briefing unless explicitly asked
+- Never respond with formal document formatting
+- Never be robotic or overly bureaucratic
+- Never say "I think", "maybe", or "possibly" — be confident"""
+
 
 
 # ==========================
@@ -429,6 +494,60 @@ def get_relief_plan_for_api(payload: dict) -> dict:
         return {"success": False, "error": briefing, "briefing": None}
 
     return {"success": True, "error": None, "briefing": briefing}
+
+
+# ==========================
+# Conversational Chat Function
+# ==========================
+
+def chat_with_assistant(user_message: str, chat_history: list, context: dict = None) -> str:
+    """
+    Handle a conversational exchange with the CrisisLens AI Assistant.
+
+    Args:
+        user_message : The user's latest question or message.
+        chat_history : List of previous messages [{"role": ..., "content": ...}].
+        context      : Optional dict with current incident context
+                       (keys: disaster, location, severity, authenticity, report).
+
+    Returns:
+        str: The assistant's reply.
+    """
+    context_block = ""
+    if context:
+        context_block = f"""
+
+CURRENT INCIDENT CONTEXT:
+- Disaster Type : {context.get('disaster', 'N/A')}
+- Location      : {context.get('location', 'N/A')}
+- Severity      : {context.get('severity', 'N/A')}
+- Authenticity  : {context.get('authenticity', 'N/A')}
+- Original Report: {context.get('report', 'N/A')[:500]}
+"""
+
+    messages = [
+        {"role": "system", "content": CHAT_SYSTEM_PROMPT + context_block}
+    ]
+
+    # Include recent chat history (last 10 messages to stay within context limits)
+    for msg in chat_history[-10:]:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Add the new user message
+    messages.append({"role": "user", "content": user_message})
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=1500,
+            top_p=0.9,
+            stream=False
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Agent Error: {str(e)}"
 
 
 # ==========================

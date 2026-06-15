@@ -1,47 +1,74 @@
 # utils/fake_news_detection.py
+import re
+
 
 class FakeNewsDetector:
+    """
+    Three-tier authenticity classifier:
+      - Fake       : strong misinformation signals
+      - Suspicious : exaggerated or unverified claims
+      - Likely Real: no red flags detected
+    """
 
-    def __init__(self):
+    # ── FAKE signals ─────────────────────────────────────────────────
+    FAKE_KW = [
+        "world ending", "entire pakistan destroyed", "all hospitals destroyed",
+        "government hiding", "hidden from public", "mainstream media not reporting",
+        "share before they delete", "share immediately", "before it gets deleted",
+        "fake news", "100000 dead", "1 million dead", "millions killed",
+        "apocalypse", "government collapsed", "martial law declared",
+        "nobody survived", "all cities flooded", "entire city wiped out",
+    ]
 
-        self.fake_keywords = [
+    # ── SUSPICIOUS / exaggeration signals ───────────────────────────
+    SUSPICIOUS_KW = [
+        "allegedly", "reportedly", "rumor", "rumour", "unconfirmed",
+        "social media claim", "viral post", "whatsapp forward",
+        "unverified", "sources say", "some people claim",
+        "breaking news unconfirmed", "not yet confirmed",
+        "could be", "possibly", "might be", "spread awareness",
+        "share this now", "please share",
+    ]
 
-            "world ending",
-            "entire pakistan destroyed",
-            "100000 dead",
-            "all cities destroyed",
-            "government collapsed",
-            "apocalypse",
-            "fake news",
-            "unverified"
-        ]
+    # ── CREDIBILITY boosters (reduce false positives) ────────────────
+    CREDIBLE_KW = [
+        "ndma", "pdma", "rescue 1122", "civil defence", "government of pakistan",
+        "confirmed by", "official statement", "press release", "according to",
+        "district administration", "deputy commissioner", "army", "pakistan army",
+        "provincial government", "federal government", "ministry of",
+        "usgs", "meteorological department", "pmd", "geo news", "dawn news",
+        "ary news", "the express tribune", "bbc", "reuters",
+    ]
 
-        self.suspicious_keywords = [
+    # ── extreme numbers that are implausible ─────────────────────────
+    _EXAG_RE = re.compile(
+        r'(\d{6,})\s*(?:dead|killed|homeless|displaced|affected)', re.I
+    )
 
-            "reportedly",
-            "rumor",
-            "allegedly",
-            "unconfirmed",
-            "social media claim",
-            "viral post"
-        ]
-
-    def detect(self, text):
-
-        if not text:
+    def detect(self, text: str) -> str:
+        if not text or not text.strip():
             return "Unknown"
 
-        text = text.lower()
+        t = text.lower()
 
-        for word in self.fake_keywords:
-
-            if word in text:
+        # Hard FAKE check first
+        for kw in self.FAKE_KW:
+            if kw in t:
                 return "Fake"
 
-        for word in self.suspicious_keywords:
+        # Implausibly large numbers
+        m = self._EXAG_RE.search(t)
+        if m and int(m.group(1)) > 500_000:
+            return "Fake"
 
-            if word in text:
-                return "Suspicious"
+        # Count credibility signals
+        credible_hits = sum(1 for kw in self.CREDIBLE_KW if kw in t)
+
+        # Suspicious check (skip if enough credible sources cited)
+        if credible_hits < 2:
+            for kw in self.SUSPICIOUS_KW:
+                if kw in t:
+                    return "Suspicious"
 
         return "Likely Real"
 
@@ -49,5 +76,5 @@ class FakeNewsDetector:
 detector = FakeNewsDetector()
 
 
-def detect_fake_news(text):
+def detect_fake_news(text: str) -> str:
     return detector.detect(text)
