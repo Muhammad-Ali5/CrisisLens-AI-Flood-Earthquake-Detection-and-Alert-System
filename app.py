@@ -1,3 +1,7 @@
+import importlib.util
+import threading
+from pathlib import Path
+
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
@@ -613,6 +617,28 @@ if "assistant_messages" not in st.session_state:
     st.session_state.assistant_messages = []
 if "incident_context" not in st.session_state:
     st.session_state.incident_context = None
+if "speech_live_thread" not in st.session_state:
+    st.session_state.speech_live_thread = None
+if "speech_live_module" not in st.session_state:
+    st.session_state.speech_live_module = None
+
+
+def load_speech_live_model():
+    """Load the standalone speech-to-speech module from its file path."""
+    module_path = Path(__file__).resolve().parent / "utils" / "speech to speech live model.py"
+    if not module_path.exists():
+        return None
+
+    spec = importlib.util.spec_from_file_location("speech_live_model", module_path)
+    if spec is None or spec.loader is None:
+        return None
+
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+        return module
+    except Exception:
+        return None
 
 
 # =========================================================
@@ -791,6 +817,65 @@ with col_options:
 st.markdown('<div style="height:0.5rem"></div>', unsafe_allow_html=True)
 
 analyze_btn = st.button("🔍  Run AI Analysis Pipeline", key="analyze", use_container_width=True)
+
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="section-header">
+    <div class="section-icon si-red">🎤</div>
+    <div class="section-title">Speech-to-Speech Live Model</div>
+</div>
+""", unsafe_allow_html=True)
+
+voice_col, status_col = st.columns([2, 1])
+
+with voice_col:
+    st.caption("Use the standalone speech-to-speech live model from the utils folder for voice interaction.")
+    st.write("This section starts the live speech model directly from the app page so it is visible in the main dashboard area.")
+
+with status_col:
+    if st.session_state.speech_live_module is None:
+        try:
+            st.session_state.speech_live_module = load_speech_live_model()
+            if st.session_state.speech_live_module is None:
+                st.error("❌ Live model file could not be loaded. Check that 'utils/speech to speech live model.py' exists.")
+        except Exception as e:
+            st.error(f"❌ Error loading model: {e}")
+    
+    if st.session_state.speech_live_module is not None:
+        live_thread = st.session_state.get("speech_live_thread")
+        is_running = live_thread is not None and live_thread.is_alive()
+        
+        if not is_running:
+            if st.button("▶️ Start live model", key="start_live_voice_model", use_container_width=True):
+                try:
+                    print("🔧 Starting speech-to-speech live model...")
+                    st.session_state.speech_live_thread = threading.Thread(
+                        target=st.session_state.speech_live_module.main,
+                        name="speech-live-model",
+                        daemon=True,
+                    )
+                    st.session_state.speech_live_thread.start()
+                    st.success("✅ Speech-to-speech live model started. Check terminal for logs.")
+                except Exception as exc:
+                    st.error(f"❌ Failed to start: {str(exc)[:100]}")
+        else:
+            if st.button("⏹️ Stop live model", key="stop_live_voice_model", use_container_width=True):
+                try:
+                    import sys
+                    if "__gemini_store__" in sys.modules:
+                        store = sys.modules["__gemini_store__"]
+                        store.running = False
+                    st.success("✅ Stopping live model...")
+                except Exception as exc:
+                    st.error(f"❌ Error stopping: {str(exc)[:100]}")
+        
+        live_thread = st.session_state.get("speech_live_thread")
+        is_running = live_thread is not None and live_thread.is_alive()
+        
+        if is_running:
+            st.info("🟢 Status: Running")
+        else:
+            st.caption("⚪ Status: Idle")
 
 
 # =========================================================
