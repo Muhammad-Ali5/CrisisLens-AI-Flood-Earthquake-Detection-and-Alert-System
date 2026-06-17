@@ -1,12 +1,18 @@
 import importlib.util
 import threading
+import tempfile
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+load_dotenv()
 
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 import time
+from PIL import Image
 
 from utils.disaster_classifier import classify_disaster
 from utils.location_extractor import extract_location
@@ -15,6 +21,9 @@ from utils.fake_news_detection import detect_fake_news
 from utils.alert_engine import alert_engine
 from utils.gemini_relief_agent import generate_relief_plan, chat_with_assistant
 from utils.maps import map_manager
+from utils.vision_report_generator import generate_incident_report
+from utils.pipeline import analyze_report
+
 
 
 # =========================================================
@@ -621,6 +630,18 @@ if "speech_live_thread" not in st.session_state:
     st.session_state.speech_live_thread = None
 if "speech_live_module" not in st.session_state:
     st.session_state.speech_live_module = None
+if "photo_capture_bytes" not in st.session_state:
+    st.session_state.photo_capture_bytes = None
+if "photo_capture_name" not in st.session_state:
+    st.session_state.photo_capture_name = None
+if "photo_analysis" not in st.session_state:
+    st.session_state.photo_analysis = None
+if "photo_report" not in st.session_state:
+    st.session_state.photo_report = None
+if "cam_key" not in st.session_state:
+    st.session_state.cam_key = 0
+if "upload_key" not in st.session_state:
+    st.session_state.upload_key = 0
 
 
 def load_speech_live_model():
@@ -822,60 +843,301 @@ st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 st.markdown("""
 <div class="section-header">
     <div class="section-icon si-red">🎤</div>
-    <div class="section-title">Speech-to-Speech Live Model</div>
+    <div class="section-title">📸 Photo Analysis & 🎙️ Voice Model</div>
 </div>
 """, unsafe_allow_html=True)
 
+# ── Voice model start/stop ──
 voice_col, status_col = st.columns([2, 1])
 
 with voice_col:
-    st.caption("Use the standalone speech-to-speech live model from the utils folder for voice interaction.")
-    st.write("This section starts the live speech model directly from the app page so it is visible in the main dashboard area.")
+    st.caption("🎙️ Voice commander — بول کر آفات کی رپورٹ کریں | 📸 Photo tools — تصویر سے رپورٹ تیار کریں")
 
 with status_col:
     if st.session_state.speech_live_module is None:
         try:
             st.session_state.speech_live_module = load_speech_live_model()
             if st.session_state.speech_live_module is None:
-                st.error("❌ Live model file could not be loaded. Check that 'utils/speech to speech live model.py' exists.")
+                st.error("❌ Live model file could not be loaded — ماڈیل لوڈ نہیں ہو سکا")
         except Exception as e:
             st.error(f"❌ Error loading model: {e}")
-    
+
     if st.session_state.speech_live_module is not None:
         live_thread = st.session_state.get("speech_live_thread")
         is_running = live_thread is not None and live_thread.is_alive()
-        
+
         if not is_running:
-            if st.button("▶️ Start live model", key="start_live_voice_model", use_container_width=True):
+            if st.button("▶️ Start Live Model  |  ماڈیل شروع کریں", key="start_live_voice_model", use_container_width=True):
                 try:
-                    print("🔧 Starting speech-to-speech live model...")
                     st.session_state.speech_live_thread = threading.Thread(
                         target=st.session_state.speech_live_module.main,
                         name="speech-live-model",
                         daemon=True,
                     )
                     st.session_state.speech_live_thread.start()
-                    st.success("✅ Speech-to-speech live model started. Check terminal for logs.")
+                    st.success("✅ Live model started — ماڈیل چل رہا ہے۔ ٹرمینل میں لاگ دیکھیں۔")
                 except Exception as exc:
                     st.error(f"❌ Failed to start: {str(exc)[:100]}")
         else:
-            if st.button("⏹️ Stop live model", key="stop_live_voice_model", use_container_width=True):
+            if st.button("⏹️ Stop Live Model  |  ماڈیل بند کریں", key="stop_live_voice_model", use_container_width=True):
                 try:
                     import sys
-                    if "__gemini_store__" in sys.modules:
-                        store = sys.modules["__gemini_store__"]
+                    store_key = "__crisislens_voice_store__"
+                    if store_key in sys.modules:
+                        store = sys.modules[store_key]
                         store.running = False
-                    st.success("✅ Stopping live model...")
+                    st.success("✅ Stopping live model — ماڈیل بند ہو رہا ہے۔")
                 except Exception as exc:
                     st.error(f"❌ Error stopping: {str(exc)[:100]}")
-        
+
         live_thread = st.session_state.get("speech_live_thread")
         is_running = live_thread is not None and live_thread.is_alive()
-        
+
         if is_running:
-            st.info("🟢 Status: Running")
+            st.info("🟢 Status: Running  |  حالت: چل رہا ہے")
         else:
-            st.caption("⚪ Status: Idle")
+            st.caption("⚪ Status: Idle  |  حالت: غیر فعال")
+
+# ── Divider ──
+st.markdown('<div style="height:0.5rem"></div>', unsafe_allow_html=True)
+
+# ── Photo Tools ──
+photo_tabs = st.tabs([
+    "📸 Take Photo  |  تصویر لیں",
+    "📁 Upload Photo  |  تصویر اپ لوڈ کریں",
+    "🔍 Analyze  |  تجزیہ کریں",
+    "📄 Report  |  رپورٹ"
+])
+
+with photo_tabs[0]:
+    cam = st.camera_input("📷 Capture a disaster scene photo  |  آفات کی تصویر لیں", key=f"cam_{st.session_state.cam_key}")
+
+    if cam is not None:
+        st.session_state.photo_capture_bytes = cam.getvalue()
+        st.session_state.photo_capture_name = "camera_capture.jpg"
+
+    saved = st.session_state.photo_capture_bytes is not None and st.session_state.photo_capture_name == "camera_capture.jpg"
+    if saved:
+        st.image(st.session_state.photo_capture_bytes, caption="📸 Saved photo  |  محفوظ کردہ تصویر", use_container_width=True)
+        st.info("✅ Ready for analysis — اب Analyze ٹیب پر جائیں")
+        if st.button("🗑️ Clear  |  ہٹائیں", key="clear_cam_photo", use_container_width=True):
+            st.session_state.photo_capture_bytes = None
+            st.session_state.photo_capture_name = None
+            st.session_state.cam_key += 1
+            st.rerun()
+
+with photo_tabs[1]:
+    uploaded = st.file_uploader(
+        "📤 Upload a disaster scene image  |  آفات کی تصویر اپ لوڈ کریں",
+        type=["jpg", "jpeg", "png", "bmp", "webp"],
+        key=f"upload_{st.session_state.upload_key}",
+    )
+    if uploaded is not None:
+        st.session_state.photo_capture_bytes = uploaded.getvalue()
+        st.session_state.photo_capture_name = uploaded.name
+        st.image(uploaded, caption="📁 Uploaded image  |  اپ لوڈ کردہ تصویر", use_container_width=True)
+        st.success(f"✅ Photo uploaded: {uploaded.name} — تصویر اپ لوڈ ہو گئی!")
+
+        # ── Auto-analyze + pipeline + alerts ──
+        try:
+            ext = os.path.splitext(uploaded.name)[1] or ".jpg"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp.write(st.session_state.photo_capture_bytes)
+                tmp_path = tmp.name
+
+            with st.spinner("🔍 Analyzing with Gemini Vision...  |  تجزیہ ہو رہا ہے۔۔۔"):
+                analysis = generate_incident_report(tmp_path)
+            os.unlink(tmp_path)
+
+            st.session_state.photo_analysis = analysis
+            st.success("✅ Vision analysis done!  |  بصری تجزیہ مکمل!")
+
+            with st.spinner("⚙️ Running ML pipeline + alerts...  |  پائپ لائن چل رہی ہے۔۔۔"):
+                result = analyze_report(analysis)
+
+            st.session_state.photo_report = result
+
+            # ── Show Results ──
+            disaster = result.get("disaster", "Unknown")
+            location = result.get("location", "Unknown")
+            severity = result.get("severity", "Unknown")
+            authenticity = result.get("authenticity", "Unknown")
+
+            st.markdown("""<div style="border-top:2px solid #1e2d4a;margin:1rem 0 0.5rem 0"></div>""", unsafe_allow_html=True)
+            st.markdown("### 📊 Auto-Generated Report  |  خودکار رپورٹ")
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f"**🆘 Disaster  |  آفت:** {disaster}")
+                st.markdown(f"**📍 Location  |  مقام:** {location}")
+                st.markdown(f"**⚠️ Severity  |  شدت:** {severity}")
+                st.markdown(f"**🔍 Authenticity  |  مستندیت:** {authenticity}")
+            with col_b:
+                st.markdown("**🚨 Alerts  |  الرٹس:**")
+                citizen_alert = str(result.get('citizen_alert', ''))
+                ngo_alert = str(result.get('ngo_alert', ''))
+                gov_alert = str(result.get('government_alert', ''))
+                if citizen_alert:
+                    with st.expander("👤 Citizen Alert  |  شہری الرٹ", expanded=False):
+                        st.markdown(citizen_alert.replace("\n", "  \n"))
+                if ngo_alert:
+                    with st.expander("🏛️ NGO Alert  |  این جی او الرٹ", expanded=False):
+                        st.markdown(ngo_alert.replace("\n", "  \n"))
+                if gov_alert:
+                    with st.expander("🏢 Govt Alert  |  حکومتی الرٹ", expanded=False):
+                        st.markdown(gov_alert.replace("\n", "  \n"))
+
+            with st.expander("📋 Full AI Briefing  |  مکمل بریفنگ"):
+                st.markdown(result.get("briefing", "N/A"))
+
+            # ── Inline map ──
+            try:
+                disaster_map = map_manager.create_map(location, disaster, severity)
+                st_folium(disaster_map, width=None, height=350, returned_objects=[])
+            except Exception as map_err:
+                st.caption(f"📍 Map preview: {location} ({map_err})")
+
+            # ── Save report to disk (record copy) + ML pipeline ──
+            report_text = f"""
+╔══════════════════════════════════════════════════════════╗
+║          🚨 CRISIS DISASTER REPORT — AUTO-GENERATED      ║
+║          🚨 آفات کی خودکار رپورٹ                         ║
+╚══════════════════════════════════════════════════════════╝
+
+🆘 Disaster Type  |  آفت کی قسم: {disaster}
+📍 Location  |  مقام: {location}
+⚠️ Severity  |  شدت: {severity}
+🔍 Authenticity  |  مستندیت: {authenticity}
+
+════════════════════════════════════════════════════════════
+🚨 ALERTS  |  الرٹس
+════════════════════════════════════════════════════════════
+
+👤 CITIZEN ALERT  |  شہری الرٹ:
+{result.get('citizen_alert', 'N/A')}
+
+🏛️ NGO ALERT  |  این جی او الرٹ:
+{result.get('ngo_alert', 'N/A')}
+
+🏢 GOVERNMENT ALERT  |  حکومتی الرٹ:
+{result.get('government_alert', 'N/A')}
+
+════════════════════════════════════════════════════════════
+🤖 AI COMMANDER BRIEFING  |  AI کمانڈر بریفنگ
+════════════════════════════════════════════════════════════
+
+{result.get('briefing', 'N/A')}
+
+════════════════════════════════════════════════════════════
+🔍 VISION ANALYSIS  |  بصری تجزیہ
+════════════════════════════════════════════════════════════
+
+{analysis}
+
+════════════════════════════════════════════════════════════
+✅ Report auto-generated by CrisisLens AI  |  CrisisLens AI
+   کے ذریعے خودکار رپورٹ تیار کی گئی
+════════════════════════════════════════════════════════════
+            """.strip()
+
+            os.makedirs("data/reports", exist_ok=True)
+            report_filename = f"crisis_report_{uploaded.name.rsplit('.',1)[0]}_{int(time.time())}.txt"
+            report_path = os.path.join("data/reports", report_filename)
+            with open(report_path, "w", encoding="utf-8") as f:
+                f.write(report_text)
+            st.success(f"📁 Report auto-saved to `{report_path}`  |  رپورٹ خودکار محفوظ: `{report_path}`")
+
+            st.download_button(
+                "📥 Download Report (.txt)  |  رپورٹ ڈاؤن لوڈ کریں",
+                data=report_text,
+                file_name=f"crisis_report_{uploaded.name.rsplit('.',1)[0]}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+            st.info("✅ ML pipeline processed + report saved to records  |  ML پروسیسنگ مکمل + رپورٹ محفوظ!")
+
+            if st.button("🗑️ Clear & Upload New  |  نئی تصویر اپ لوڈ کریں", key="clear_after_upload", use_container_width=True):
+                st.session_state.photo_capture_bytes = None
+                st.session_state.photo_capture_name = None
+                st.session_state.upload_key += 1
+                st.rerun()
+        except Exception as e:
+            err_str = str(e)
+            if "503" in err_str or "UNAVAILABLE" in err_str:
+                st.error("❌ Gemini API is overloaded (503). Try again in a few seconds  |  Gemini API مصروف ہے، کچھ سیکنڈ بعد دوبارہ کوشش کریں")
+            elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                st.error("❌ API rate limit reached. Wait a moment and retry  |  API کی حد ختم، تھوڑی دیر بعد کوشش کریں")
+            elif "API_KEY" in err_str.upper() or "unauthorized" in err_str.lower():
+                st.error("❌ Invalid Gemini API key. Check your .env file  |  Gemini API کلید درست نہیں، .env چیک کریں")
+            else:
+                st.error(f"❌ Auto pipeline failed: {e}  |  خودکار پائپ لائن ناکام")
+    elif st.session_state.photo_capture_bytes is not None and st.session_state.photo_capture_name != "camera_capture.jpg":
+        st.image(st.session_state.photo_capture_bytes, caption="📁 Stored upload  |  محفوظ کردہ تصویر", use_container_width=True)
+        st.info("✅ Photo saved — اب نیا اپ لوڈ کرنے کے لیے Clear دبائیں")
+        if st.button("🗑️ Clear Photo  |  تصویر ہٹائیں", key="clear_upload_photo", use_container_width=True):
+            st.session_state.photo_capture_bytes = None
+            st.session_state.photo_capture_name = None
+            st.session_state.upload_key += 1
+            st.rerun()
+
+with photo_tabs[2]:
+    st.markdown('<div style="height:0.3rem"></div>', unsafe_allow_html=True)
+    if st.button("🔍 Analyze Photo  |  تصویر کا تجزیہ کریں", key="analyze_photo_btn", use_container_width=True):
+        if st.session_state.photo_capture_bytes is None:
+            st.warning("⚠️ Please take or upload a photo first  |  پہلے تصویر لیں یا اپ لوڈ کریں")
+        else:
+            try:
+                ext = os.path.splitext(st.session_state.photo_capture_name)[1] or ".jpg"
+                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                    tmp.write(st.session_state.photo_capture_bytes)
+                    tmp_path = tmp.name
+
+                with st.spinner("🔍 Analyzing image with Gemini Vision...  |  تصویر کا تجزیہ ہو رہا ہے۔۔۔"):
+                    analysis = generate_incident_report(tmp_path)
+                st.session_state.photo_analysis = analysis
+                os.unlink(tmp_path)
+
+                st.success("✅ Analysis complete!  |  تجزیہ مکمل!")
+                st.markdown("### 🔍 Vision Analysis Result  |  بصری تجزیہ کا نتیجہ")
+                st.markdown(analysis)
+            except Exception as e:
+                st.error(f"❌ Analysis failed: {e}  |  تجزیہ ناکام")
+    if st.session_state.photo_analysis:
+        with st.expander("📋 Last Analysis  |  پچھلا تجزیہ", expanded=True):
+            st.markdown(st.session_state.photo_analysis)
+        if st.button("🔄 Clear Analysis  |  تجزیہ ہٹائیں", key="clear_analysis"):
+            st.session_state.photo_analysis = None
+            st.rerun()
+
+with photo_tabs[3]:
+    st.markdown('<div style="height:0.3rem"></div>', unsafe_allow_html=True)
+    if st.button("📄 Generate Complete Report  |  مکمل رپورٹ تیار کریں", key="gen_report_btn", use_container_width=True):
+        analysis_text = st.session_state.photo_analysis
+        if not analysis_text:
+            st.warning("⚠️ Please analyze a photo first (Analyze tab)  |  پہلے تصویر کا تجزیہ کریں (تجزیہ والے ٹیب میں)")
+        else:
+            with st.spinner("⚙️ Running full crisis pipeline...  |  مکمل پائپ لائن چل رہی ہے۔۔۔"):
+                result = analyze_report(analysis_text)
+            st.session_state.photo_report = result
+
+            st.success("✅ Report generated!  |  رپورٹ تیار!")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**🆘 Disaster  |  آفت:** {result.get('disaster', 'N/A')}")
+                st.markdown(f"**📍 Location  |  مقام:** {result.get('location', 'N/A')}")
+                st.markdown(f"**⚠️ Severity  |  شدت:** {result.get('severity', 'N/A')}")
+                st.markdown(f"**🔍 Authenticity  |  مستندیت:** {result.get('authenticity', 'N/A')}")
+            with col2:
+                st.markdown("**🚨 Alerts  |  الرٹس:**")
+                st.markdown(f"- 👤 Citizen  |  شہری: {str(result.get('citizen_alert', ''))[:120]}...")
+                st.markdown(f"- 🏛️ NGO  |  این جی او: {str(result.get('ngo_alert', ''))[:120]}...")
+                st.markdown(f"- 🏢 Govt  |  حکومت: {str(result.get('government_alert', ''))[:120]}...")
+            with st.expander("📋 Full AI Briefing  |  مکمل بریفنگ"):
+                st.markdown(result.get("briefing", "No briefing generated.  |  کوئی بریفنگ تیار نہیں ہوئی۔"))
+    if st.session_state.photo_report:
+        if st.button("🔄 Clear Report  |  رپورٹ ہٹائیں", key="clear_report"):
+            st.session_state.photo_report = None
+            st.rerun()
 
 
 # =========================================================

@@ -1,0 +1,64 @@
+🚨 AUTO-DETECTED DISASTER FROM LIVE CAMERA
+===========================================
+Disaster: Earthquake
+Location: Pakistan
+Severity: High
+Authenticity: Suspicious
+
+ALERTS:
+Citizen: ⚠ Report requires verification.
+NGO: ⚠ Verify report before deployment.
+Government: ⚠ Verification required before action.
+
+AI BRIEFING:
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+VISION ANALYSIS:
+LOCATION:
+Undetermined. The image provides no specific geographical, architectural, or textual clues to identify a city, district, or province within Pakistan. The background appears to be an indoor wall.
+
+DISASTER TYPE:
+None identifiable. The image does not contain any visual evidence or contextual information to suggest a flood, earthquake, fire, landslide, storm, accident, or any other type of disaster.
+
+SEVERITY:
+Not applicable, as no disaster type can be identified.
+
+VISIBLE DAMAGE:
+None. The background wall appears intact with no signs of structural damage, debris, water marks, fire damage, or any other visible damage typically associated with a disaster.
+
+RISKS:
+No specific risks can be identified from the provided image, as there is no evidence of a disaster or hazardous conditions.
+
+INCIDENT REPORT:
+
+**INCIDENT REPORT: Absence of Disaster Evidence**
+
+**Date of Analysis:** October 26, 2023
+**Image Source:** Provided User Upload
+**Analyst:** Emergency Disaster Intelligence Analyst, Pakistan
+
+**OVERVIEW:**
+The submitted image features a close-up portrait of an individual, seemingly indoors, against a plain, light-colored wall. The subject is a male with a beard and appears to be wearing a black cap. A small yellow object, possibly a flower or fabric, is visible in the hair on the left side of the head.
+
+**LOCATION ASSESSMENT:**
+Efforts to determine a specific location within Pakistan have been unsuccessful. The image lacks any identifiable landmarks, distinctive architectural styles, street signs, vehicle plates, or any textual information that could pinpoint a city, district, or province. The background is a generic wall, offering no geographical context.
+
+**DISASTER ASSESSMENT:**
+A thorough review of the image reveals **no evidence whatsoever of any disaster**. There are no visible signs of:
+*   **Flooding:** No water levels, debris, or water damage.
+*   **Earthquake:** No structural collapse, cracks in walls, rubble, or dust.
+*   **Fire:** No smoke, flames, charring, or fire damage.
+*   **Landslide:** No earth movement, displaced soil, or debris.
+*   **Storm:** No high winds, rain, or storm damage to property.
+*   **Accident:** No vehicles, wreckage, or signs of a specific incident.
+
+The individual's expression is serious, but this alone cannot be attributed to a disaster event without corroborating environmental factors. The wall behind the individual appears to be in normal condition.
+
+**DAMAGE ASSESSMENT:**
+No visible damage to infrastructure or the immediate environment is present in the image.
+
+**RISK ASSESSMENT:**
+Given the complete absence of disaster indicators and damage, no immediate risks to people or infrastructure can be identified based solely on this image.
+
+**CONCLUSION:**
+The provided image does not contain any visual information to suggest an ongoing disaster, past disaster impact, or any emergency situation in Pakistan. The image appears to be a personal photograph with no discernible relevance to disaster intelligence. Further analysis requires additional images or contextual information.

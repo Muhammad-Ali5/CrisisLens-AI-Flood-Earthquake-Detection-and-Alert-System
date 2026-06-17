@@ -326,7 +326,18 @@ def generate_relief_plan(
         return response.choices[0].message.content.strip()
 
     except Exception as e:
-        return f"Agent Error: {str(e)}"
+        err = str(e)
+        if "401" in err or "invalid_api_key" in err or "Invalid API Key" in err:
+            return (
+                "❌ **Groq API key is invalid or expired.**\n\n"
+                "The AI Commander cannot generate briefings until you update your key.\n\n"
+                "**Fix:**\n"
+                "1. Go to https://console.groq.com/keys\n"
+                "2. Generate a new API key\n"
+                "3. Update `GROQ_API_KEY` in your `.env` file\n"
+                "4. Restart the app\n"
+            )
+        return f"Agent Error: {err}"
 
 
 # ==========================
@@ -547,7 +558,18 @@ CURRENT INCIDENT CONTEXT:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Agent Error: {str(e)}"
+        err = str(e)
+        if "401" in err or "invalid_api_key" in err or "Invalid API Key" in err:
+            return (
+                "❌ **Groq API key is invalid or expired.**\n\n"
+                "The AI Assistant cannot respond until you update your key.\n\n"
+                "**Fix:**\n"
+                "1. Go to https://console.groq.com/keys\n"
+                "2. Generate a new API key\n"
+                "3. Update `GROQ_API_KEY` in your `.env` file\n"
+                "4. Restart the app\n"
+            )
+        return f"Agent Error: {err}"
 
 
 # ==========================

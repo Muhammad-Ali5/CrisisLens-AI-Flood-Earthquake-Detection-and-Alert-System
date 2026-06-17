@@ -1,0 +1,107 @@
+DISASTER REPORT (Auto-Generated)
+================================
+Disaster Type: Flood
+Location: Pakistan
+Severity: High
+Authenticity: Likely Real
+
+ALERTS:
+Citizen: 
+🚨 FLOOD ALERT
+
+Location: Pakistan
+Severity: High
+
+ENGLISH:
+
+• Move to higher ground immediately
+• Avoid crossing flood water
+• Keep drinking water stored
+• Prepare emergency supplies
+• Follow official instructions
+• Call 1122 in emergencies
+
+اردو:
+
+• فوراً محفوظ اور اونچی جگہ منتقل ہوں
+• سیلابی پانی میں داخل نہ ہوں
+• پینے کا صاف پانی محفوظ رکھیں
+• ہنگامی سامان تیار رکھیں
+• سرکاری ہدایات پر عمل کریں
+• ایمرجنسی میں 1122 پر کال کریں
+
+NGO: 
+🚨 NGO PRIORITY RESPONSE ALERT
+
+Disaster: Flood
+Location: Pakistan
+Severity: High
+
+Recommended Actions:
+
+1. Deploy assessment teams
+2. Prioritize vulnerable populations
+3. Establish temporary shelters
+4. Arrange food distribution
+5. Arrange clean drinking water
+6. Deploy medical support
+7. Coordinate with local authorities
+
+Priority Area:
+Pakistan
+
+Response Level:
+High
+
+Government: 
+🚨 GOVERNMENT RESPONSE ALERT
+
+Disaster: Flood
+Location: Pakistan
+Severity: High
+
+Immediate Actions:
+
+• Activate emergency response center
+• Coordinate NDMA and PDMA
+• Deploy Rescue 1122 teams
+• Monitor hospitals
+• Ensure law and order
+• Monitor transportation routes
+
+Priority Deployment Zone:
+Pakistan
+
+Recommended Response Level:
+High
+
+
+AI BRIEFING:
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+VISION ANALYSIS:
+DISASTER TYPE:
+Flood
+
+SEVERITY:
+High
+
+INCIDENT REPORT:
+**Overview:** The uploaded image depicts a severe flood event occurring on a street lined with buildings, likely a residential and commercial area. The water level is significantly high, covering the entire street and submerging the lower portions of the structures. A person is shown wading through the deep, murky brown water, carrying heavy bags on their shoulders, indicating the significant disruption to daily life and the hazardous conditions.
+
+**Visible Damage:**
+*   **Widespread Inundation:** The entire visible street is submerged under a substantial depth of turbid, brown floodwater, reaching above the knees of the individual in the foreground.
+*   **Building Submersion:** The ground floors and entrances of all visible buildings are underwater, indicating direct impact on residences and businesses. Many storefronts appear closed with shutters down, suggesting either evacuation or inability to operate.
+*   **Floating Debris:** Various pieces of debris, including plastic items, are visible floating on the surface of the floodwaters.
+*   **Infrastructure Disruption:** The street is impassable by conventional vehicles and poses significant challenges for pedestrian movement.
+
+**Possible Risks:**
+*   **Human Safety:** High risk of drowning, injury from hidden debris or strong currents, and electrocution from submerged electrical lines or appliances.
+*   **Public Health:** Increased potential for outbreaks of waterborne diseases (e.g., cholera, typhoid, leptospirosis) due to contaminated floodwaters mixing with sewage.
+*   **Property Damage:** Extensive damage to homes, businesses, and personal belongings. Prolonged water exposure can compromise the structural integrity of buildings.
+*   **Economic Impact:** Significant loss of livelihoods due to businesses being unable to operate and destruction of goods/equipment.
+*   **Disruption of Services:** Challenges in delivering emergency aid, medical assistance, food, and other essential supplies.
+*   **Displacement:** Potential for widespread displacement of residents from their homes.
+*   **Environmental Contamination:** Spread of pollutants and hazardous materials within the floodwaters.
+
+**Contextual Note:** The accompanying text states that "Extreme weather has battered Vietnam in recent months. Two typhoons, Kalmaegi and Bualoi, left a trail of death and destruction within weeks of each other." This context confirms the severe nature and widespread impact of the disaster, with the depicted flood likely a direct consequence of these extreme weather events.

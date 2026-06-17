@@ -1,0 +1,50 @@
+🚨 AUTO-DETECTED DISASTER FROM LIVE CAMERA
+===========================================
+Disaster: Earthquake
+Location: Pakistan
+Severity: Medium
+Authenticity: Suspicious
+
+ALERTS:
+Citizen: ⚠ Report requires verification.
+NGO: ⚠ Verify report before deployment.
+Government: ⚠ Verification required before action.
+
+AI BRIEFING:
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+VISION ANALYSIS:
+LOCATION:
+Undetermined within Pakistan. No specific geographical or architectural clues are visible to pinpoint a city, district, or province. The cultural attire (cap, beard) is common across various regions of Pakistan.
+
+DISASTER TYPE:
+None identifiable from the provided image. There are no visual indicators of a flood, earthquake, fire, landslide, storm, or accident.
+
+SEVERITY:
+Undetermined, as no disaster type or event is identifiable from the image.
+
+VISIBLE DAMAGE:
+No visible damage consistent with a disaster event (flood, earthquake, fire, landslide, storm, or accident) is present in the image. The background appears to be a textured, light-colored wall, possibly discolored or dirty, but this cannot be attributed to a specific disaster. There is no damage to infrastructure or property evident.
+
+RISKS:
+No immediate risks to people or infrastructure can be identified from the image, as no disaster event is apparent. The person in the image appears to be in an indoor or sheltered setting.
+
+INCIDENT REPORT:
+
+**Incident Report - Image Analysis**
+
+**Date of Analysis:** October 26, 2023
+**Image Source:** Provided image upload
+
+**Summary:**
+An analysis of the provided image reveals a close-up portrait of an individual, likely male, wearing a dark cap and exhibiting facial hair. The background consists of a textured, light-colored wall. The image is dimly lit and somewhat blurry.
+
+**Detailed Findings:**
+1.  **Location:** No discernible landmarks, text, architectural styles, or environmental features (vegetation, terrain) are present within the image to determine a specific city, district, or province within Pakistan. The individual's appearance is culturally common across various regions.
+2.  **Disaster Type:** Crucially, there are no visual cues or indicators suggesting the occurrence of any disaster type, including floods, earthquakes, fires, landslides, storms, or accidents. The scene depicts an individual in what appears to be a normal, albeit dimly lit, indoor or sheltered environment.
+3.  **Visible Damage:** No damage to buildings, infrastructure, natural environment, or any other elements that would typically indicate a disaster event is visible. The wall in the background shows some texture and possible discoloration, but this is not indicative of disaster-related damage.
+4.  **Severity:** Without any identified disaster event, an estimation of severity is not possible.
+5.  **Risks:** As no disaster event or hazardous conditions are evident in the image, no specific risks to people or infrastructure can be identified or assessed.
+
+**Conclusion:**
+Based on the thorough analysis of the provided image, it is concluded that the image does not depict any identifiable disaster event or associated damage. Therefore, no emergency intelligence can be derived regarding a specific incident, location, or associated risks within Pakistan. Further information or contextual details would be required to identify any potential disaster scenario.

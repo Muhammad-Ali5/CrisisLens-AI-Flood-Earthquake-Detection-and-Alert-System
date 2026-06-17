@@ -1,0 +1,154 @@
+╔══════════════════════════════════════════════════════════╗
+║          🚨 CRISIS DISASTER REPORT — AUTO-GENERATED      ║
+║          🚨 آفات کی خودکار رپورٹ                         ║
+╚══════════════════════════════════════════════════════════╝
+
+🆘 Disaster Type  |  آفت کی قسم: Flood
+📍 Location  |  مقام: Pakistan
+⚠️ Severity  |  شدت: High
+🔍 Authenticity  |  مستندیت: Likely Real
+
+════════════════════════════════════════════════════════════
+🚨 ALERTS  |  الرٹس
+════════════════════════════════════════════════════════════
+
+👤 CITIZEN ALERT  |  شہری الرٹ:
+
+🚨 FLOOD ALERT
+
+Location: Pakistan
+Severity: High
+
+ENGLISH:
+
+• Move to higher ground immediately
+• Avoid crossing flood water
+• Keep drinking water stored
+• Prepare emergency supplies
+• Follow official instructions
+• Call 1122 in emergencies
+
+اردو:
+
+• فوراً محفوظ اور اونچی جگہ منتقل ہوں
+• سیلابی پانی میں داخل نہ ہوں
+• پینے کا صاف پانی محفوظ رکھیں
+• ہنگامی سامان تیار رکھیں
+• سرکاری ہدایات پر عمل کریں
+• ایمرجنسی میں 1122 پر کال کریں
+
+
+🏛️ NGO ALERT  |  این جی او الرٹ:
+
+🚨 NGO PRIORITY RESPONSE ALERT
+
+Disaster: Flood
+Location: Pakistan
+Severity: High
+
+Recommended Actions:
+
+1. Deploy assessment teams
+2. Prioritize vulnerable populations
+3. Establish temporary shelters
+4. Arrange food distribution
+5. Arrange clean drinking water
+6. Deploy medical support
+7. Coordinate with local authorities
+
+Priority Area:
+Pakistan
+
+Response Level:
+High
+
+
+🏢 GOVERNMENT ALERT  |  حکومتی الرٹ:
+
+🚨 GOVERNMENT RESPONSE ALERT
+
+Disaster: Flood
+Location: Pakistan
+Severity: High
+
+Immediate Actions:
+
+• Activate emergency response center
+• Coordinate NDMA and PDMA
+• Deploy Rescue 1122 teams
+• Monitor hospitals
+• Ensure law and order
+• Monitor transportation routes
+
+Priority Deployment Zone:
+Pakistan
+
+Recommended Response Level:
+High
+
+
+════════════════════════════════════════════════════════════
+🤖 AI COMMANDER BRIEFING  |  AI کمانڈر بریفنگ
+════════════════════════════════════════════════════════════
+
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+════════════════════════════════════════════════════════════
+🔍 VISION ANALYSIS  |  بصری تجزیہ
+════════════════════════════════════════════════════════════
+
+**LOCATION:**
+The provided image and its accompanying text explicitly state that the event depicted occurred in **Vietnam**, mentioning typhoons Kalmaegi and Bualoi. Therefore, I cannot identify a specific city, district, or province within Pakistan from this image.
+
+**DISASTER TYPE:**
+Flood
+
+**SEVERITY:**
+High
+
+**VISIBLE DAMAGE:**
+1.  **Extensive Submergence:** Streets are completely submerged under muddy brown floodwaters, reaching knee to thigh-deep levels in the foreground and potentially deeper further down the street.
+2.  **Structural Impact on Buildings:** The lower sections of multiple shophouses and residences along the street are inundated, indicating potential water damage to foundations, interior contents, and electrical systems. Shopfronts are closed, suggesting disruption to businesses.
+3.  **Debris and Contamination:** Visible debris, including plastic bottles and other refuse, floats in the floodwaters, suggesting poor water quality and potential contamination.
+4.  **Disrupted Infrastructure:** Roads are impassable for normal vehicular traffic, forcing residents to wade through the water.
+
+**RISKS:**
+1.  **To People:**
+    *   **Health Hazards:** High risk of waterborne diseases (e.g., cholera, typhoid, leptospirosis) due to contaminated floodwaters.
+    *   **Injuries & Drowning:** Danger from hidden debris, open manholes, strong currents, or unexpected deep spots, leading to injuries or drowning, especially for children or the elderly.
+    *   **Electrocution:** Submerged electrical wiring and appliances pose a significant electrocution risk.
+    *   **Displacement & Loss of Livelihoods:** Residents may be forced to evacuate, and businesses face severe losses due to damaged inventory and prolonged closures.
+    *   **Limited Access:** Difficulty in accessing essential services like food, clean water, medical aid, and emergency response.
+2.  **To Infrastructure:**
+    *   **Structural Damage:** Prolonged immersion can weaken building foundations and structures.
+    *   **Utility Outages:** Damage to electrical grids, communication lines, and water/sewage systems, leading to power outages, communication blackouts, and unsafe drinking water.
+    *   **Road Degradation:** Damage to road surfaces and underlying infrastructure, hindering relief efforts and long-term recovery.
+    *   **Contamination of Water Supply:** Floodwaters can overwhelm and contaminate municipal water treatment plants and distribution networks.
+
+**INCIDENT REPORT:**
+
+**REPORT ID:** PK-DA-2023-F-001 (Hypothetical for reporting structure)
+**DATE OF ANALYSIS:** [Current Date]
+**SOURCE:** Digital Image and accompanying text
+
+**SUMMARY:**
+An analysis of the provided image reveals severe urban flooding. While the accompanying text explicitly identifies the location as **Vietnam** (specifically mentioning typhoons Kalmaegi and Bualoi), the visual evidence can be used to describe the nature and severity of such a disaster. The incident depicts widespread inundation of an urban street lined with multi-story buildings, forcing residents to wade through deep, muddy waters.
+
+**DETAILS:**
+The disaster type is a flood, likely caused by heavy rainfall associated with cyclonic activity as per the source text. The severity is assessed as High due to the significant water depth (knee to thigh-level), which has rendered streets impassable and submerged the lower portions of numerous buildings. Visible damage includes completely submerged roads, likely compromised ground-floor structures and contents of businesses/homes, and the presence of floating debris indicating potential contamination.
+
+**RISK ASSESSMENT:**
+The situation poses critical risks to the affected population, including health hazards from contaminated water, physical injuries, and potential drowning. Electrocution from submerged electrical systems is a significant concern. Infrastructure risks include structural damage to buildings and roads, as well as widespread disruption to essential utilities (power, water, sanitation, communication) and transportation networks. The long-term impact on livelihoods and economic activity in the affected area would be substantial.
+
+**RECOMMENDATIONS (General for similar flood events, not specific to this non-Pakistani location):**
+1.  Immediate evacuation and rescue operations for stranded individuals.
+2.  Provision of safe drinking water, food, and medical assistance to affected populations.
+3.  Rapid assessment of structural integrity of buildings and critical infrastructure.
+4.  Implementation of public health advisories regarding water safety and disease prevention.
+5.  Coordination with utility providers to restore power, communication, and sanitation systems once floodwaters recede.
+6.  Monitoring of weather patterns for further precipitation and potential secondary hazards.
+
+════════════════════════════════════════════════════════════
+✅ Report auto-generated by CrisisLens AI  |  CrisisLens AI
+   کے ذریعے خودکار رپورٹ تیار کی گئی
+════════════════════════════════════════════════════════════

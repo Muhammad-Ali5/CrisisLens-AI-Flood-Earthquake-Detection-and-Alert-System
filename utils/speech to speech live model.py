@@ -2,36 +2,89 @@
 CrisisLens AI — Live Voice Commander
 =====================================
 
-Voice interface for CrisisLens AI. A field responder, NGO worker, or call-center
-operator speaks a disaster report out loud (optionally showing the scene on
-camera), and CrisisLens AI Commander responds back in real-time speech with a
-structured emergency briefing — situation summary, threat level, immediate
-actions, and resource needs.
+Voice + console interface for CrisisLens AI. A field responder, NGO worker,
+or call-center operator speaks (or types) a disaster report — optionally
+showing the scene on camera — and CrisisLens AI Commander responds back
+with a structured emergency briefing: situation summary, threat level,
+immediate actions, and resource needs.
 
-This replaces generic small-talk behavior with the CrisisLens AI Commander
-persona and routes every spoken report through your existing ML pipeline:
+This routes every report through your existing ML pipeline:
 
-    classify_disaster()  -> disaster type
-    extract_location()   -> location
-    predict_severity()   -> severity level
-    detect_fake_news()   -> authenticity
-    generate_relief_plan() -> full briefing (spoken back to the user)
+    classify_disaster()    -> disaster type
+    extract_location()     -> location
+    predict_severity()     -> severity level
+    detect_fake_news()     -> authenticity
+    generate_relief_plan() -> full briefing (spoken / emailed / texted back)
 
-PHOTO SUPPORT
---------------
-This version adds a photo library you can build up during a session:
+CONSOLE FEATURES
+-----------------
+While the live mic + camera session is running, type any of the following
+into the terminal at the same time (press Enter after each):
 
-    - Upload a photo from disk:        type its file path into the terminal,
-                                        or say "upload photo <path>"
-    - Capture a photo from the camera: say "take a photo" / "capture photo"
-    - Ask about a specific photo:      say "what do you see in photo 2" or
-                                        "ask about the last photo" — the
-                                        Commander is shown that exact image
-                                        and answers using Gemini's vision.
+    📝 Report Text        report: <your disaster report text>
+                           submit report <your disaster report text>
 
-Every captured/uploaded photo is numbered and kept in memory for the rest
-of the session so you can refer back to "photo 1", "photo 2", "the last
-photo", etc.
+    📷 Upload Image        upload photo <path/to/file.jpg>
+
+    📸 Capture Image       take photo
+                           capture photo
+
+    🎤 Voice Report        (automatic — just speak into the mic, no command
+                            needed; CrisisLens AI listens continuously)
+
+    📍 Current Location    location
+                           current location
+                           where am i
+
+    🚨 Analyze Incident    analyze
+                           analyze incident
+                           (forces immediate pipeline analysis of whatever
+                            report text has been spoken/typed so far,
+                            without waiting for the normal silence timeout)
+
+    🤖 Ask AI Assistant    ask <any question>
+                           ask about photo <n>: <question>   (vision Q&A)
+
+    🔊 Read Response       read
+                           read response
+                           (reads the last AI answer / briefing aloud using
+                            a local, offline TTS engine — independent of the
+                            live Gemini audio channel)
+
+    📧 Send Alert          send alert
+                           send alert to <email>
+                           (emails the latest briefing — requires SMTP_USER /
+                            SMTP_PASSWORD / ALERT_EMAIL_TO in .env)
+
+    📱 Send SMS            send sms
+                           send sms to <phone>
+                           (texts the latest briefing via Twilio — requires
+                            TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN /
+                            TWILIO_FROM_NUMBER / ALERT_SMS_TO in .env)
+
+    help                   shows this command list again
+
+OPTIONAL DEPENDENCIES
+-----------------------
+Core:        pip install pyaudio opencv-python google-genai python-dotenv
+Location:    pip install requests
+Read aloud:  pip install pyttsx3
+SMS alerts:  pip install twilio
+(Email alerts use Python's built-in smtplib — no extra install needed.)
+
+ENVIRONMENT VARIABLES (.env)
+------------------------------
+    GEMINI_API_KEY          (required)
+    SMTP_HOST               (default: smtp.gmail.com)
+    SMTP_PORT               (default: 587)
+    SMTP_USER               your sending email address
+    SMTP_PASSWORD           your email app password
+    ALERT_EMAIL_FROM        (default: SMTP_USER)
+    ALERT_EMAIL_TO          default recipient for "send alert"
+    TWILIO_ACCOUNT_SID
+    TWILIO_AUTH_TOKEN
+    TWILIO_FROM_NUMBER      your Twilio sending number, e.g. +1...
+    ALERT_SMS_TO            default recipient for "send sms", e.g. +92...
 
 Usage:
     python crisislens_voice_commander.py
@@ -47,10 +100,23 @@ import traceback
 import time
 import queue
 import re
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import types as _types
 from dotenv import load_dotenv
+from utils.vision_report_generator import generate_incident_report
+from utils.pipeline import analyze_report
+
 
 load_dotenv()
+
+if __name__ == "__main__":
+    image_description = "A severe flood situation in urban area with submerged buildings."
+    report = generate_incident_report(image_description)
+    result = analyze_report(report)
+    print(result)
+
 
 # Import your existing CrisisLens AI pipeline.
 # These must be importable from your project's utils/ package.
@@ -63,9 +129,29 @@ try:
     PIPELINE_AVAILABLE = True
 except ImportError:
     PIPELINE_AVAILABLE = False
-    print("WARNING: utils/ pipeline not found on path. Voice transcripts will be "
+    print("WARNING: utils/ pipeline not found on path. Reports will be "
           "logged but NOT run through classify_disaster / generate_relief_plan. "
           "Run this file from your project root so 'utils' is importable.")
+
+# Optional third-party helpers — each feature degrades gracefully if its
+# package isn't installed, instead of crashing the whole app.
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
+try:
+    import pyttsx3
+    PYTTSX3_AVAILABLE = True
+except ImportError:
+    PYTTSX3_AVAILABLE = False
+
+try:
+    from twilio.rest import Client as TwilioClient
+    TWILIO_AVAILABLE = True
+except ImportError:
+    TWILIO_AVAILABLE = False
 
 
 # =====================================================
@@ -84,6 +170,11 @@ if _KEY not in sys.modules:
     _m.last_report_time = 0.0
     _m.photos       = []     # list of dicts: {id, path, source, bytes, caption}
     _m.photo_lock    = threading.Lock()
+    _m.last_report_text = ""    # 📝 most recent report (typed or spoken)
+    _m.last_briefing     = ""   # 🚨 full written briefing from the pipeline
+    _m.last_ai_response  = ""   # 🤖 most recent "ask" answer (for 🔊 read)
+    _m.last_location      = None  # 📍 most recent resolved location dict
+    _m.tts_engine          = None  # 🔊 lazily-initialized offline TTS engine
     sys.modules[_KEY] = _m
 
 _store = sys.modules[_KEY]
@@ -225,11 +316,163 @@ def resolve_photo_reference(text: str) -> "dict | None":
 
 
 # =====================================================
+# ALERTING CONFIGURATION (Email + SMS) — set these in .env
+# =====================================================
+SMTP_HOST              = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT              = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER              = os.getenv("SMTP_USER")
+SMTP_PASSWORD          = os.getenv("SMTP_PASSWORD")
+ALERT_EMAIL_FROM       = os.getenv("ALERT_EMAIL_FROM", SMTP_USER)
+ALERT_EMAIL_DEFAULT_TO = os.getenv("ALERT_EMAIL_TO")
+
+TWILIO_ACCOUNT_SID   = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN    = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM_NUMBER   = os.getenv("TWILIO_FROM_NUMBER")
+ALERT_SMS_DEFAULT_TO = os.getenv("ALERT_SMS_TO")
+
+SMS_MAX_CHARS = 300  # keep SMS short / affordable; truncate longer briefings
+
+
+# =====================================================
+# LOCATION, ALERTING & TEXT-TO-SPEECH HELPERS
+# =====================================================
+def get_current_location() -> dict:
+    """
+    📍 Resolves an approximate current location using IP-based geolocation
+    (no GPS hardware required). Returns a dict with lat, lon, city, region,
+    country, ip, and a human-readable 'address' string. Raises RuntimeError
+    if the lookup is unavailable or fails.
+
+    Note: IP-based location is approximate (typically city-level) and
+    reflects the network's location, not necessarily the device's exact
+    GPS position. For precise field coordinates, wire this up to a phone's
+    GPS / browser geolocation API instead.
+    """
+    if not REQUESTS_AVAILABLE:
+        raise RuntimeError("The 'requests' package is not installed. Run: pip install requests")
+
+    try:
+        resp = requests.get("http://ip-api.com/json/", timeout=5)
+        data = resp.json()
+    except Exception as e:
+        raise RuntimeError(f"Location lookup failed: {e}")
+
+    if data.get("status") != "success":
+        raise RuntimeError(f"Location lookup failed: {data.get('message', 'unknown error')}")
+
+    location = {
+        "lat": data.get("lat"),
+        "lon": data.get("lon"),
+        "city": data.get("city"),
+        "region": data.get("regionName"),
+        "country": data.get("country"),
+        "ip": data.get("query"),
+    }
+    location["address"] = ", ".join(
+        part for part in [location["city"], location["region"], location["country"]] if part
+    ) or "Unknown"
+
+    with _store.lock:
+        _store.last_location = location
+    return location
+
+
+def send_email_alert(subject: str, body: str, to_email: str = None) -> str:
+    """
+    📧 Sends the given subject/body as an emergency alert email via SMTP.
+    Falls back to ALERT_EMAIL_DEFAULT_TO if to_email isn't provided.
+    Raises ValueError on missing configuration, RuntimeError on send failure.
+    """
+    to_email = to_email or ALERT_EMAIL_DEFAULT_TO
+    if not to_email:
+        raise ValueError("No recipient email given and ALERT_EMAIL_TO is not set in .env")
+    if not SMTP_USER or not SMTP_PASSWORD:
+        raise ValueError("SMTP_USER / SMTP_PASSWORD are not configured in .env")
+
+    msg = MIMEMultipart()
+    msg["From"] = ALERT_EMAIL_FROM or SMTP_USER
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(msg["From"], [to_email], msg.as_string())
+    except Exception as e:
+        raise RuntimeError(f"Failed to send alert email: {e}")
+
+    return f"Alert email sent to {to_email}"
+
+
+def send_sms_alert(body: str, to_phone: str = None) -> str:
+    """
+    📱 Sends the given body as an SMS emergency alert via Twilio.
+    Falls back to ALERT_SMS_DEFAULT_TO if to_phone isn't provided.
+    Raises ValueError/RuntimeError on missing configuration or failure.
+    """
+    to_phone = to_phone or ALERT_SMS_DEFAULT_TO
+    if not to_phone:
+        raise ValueError("No recipient phone number given and ALERT_SMS_TO is not set in .env")
+    if not TWILIO_AVAILABLE:
+        raise RuntimeError("The 'twilio' package is not installed. Run: pip install twilio")
+    if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_FROM_NUMBER):
+        raise ValueError(
+            "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER are not configured in .env"
+        )
+
+    sms_body = (body or "").strip()
+    if len(sms_body) > SMS_MAX_CHARS:
+        sms_body = sms_body[: SMS_MAX_CHARS - 3] + "..."
+
+    try:
+        client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        message = client.messages.create(body=sms_body, from_=TWILIO_FROM_NUMBER, to=to_phone)
+    except Exception as e:
+        raise RuntimeError(f"Failed to send SMS: {e}")
+
+    return f"SMS sent to {to_phone} (sid: {message.sid})"
+
+
+def speak_text_locally(text: str):
+    """
+    🔊 Reads text aloud using a local, OFFLINE TTS engine (pyttsx3),
+    independent of the live Gemini audio session. This powers the explicit
+    "read" / "read response" command so typed reports and AI answers can be
+    read back even when no live voice turn is in progress.
+    """
+    if not text or not text.strip():
+        print("Nothing to read yet.")
+        return
+
+    if not PYTTSX3_AVAILABLE:
+        print("pyttsx3 not installed — cannot read aloud locally. Run: pip install pyttsx3")
+        print(f"[TEXT] {text}")
+        return
+
+    try:
+        with _store.lock:
+            if _store.tts_engine is None:
+                _store.tts_engine = pyttsx3.init()
+            engine = _store.tts_engine
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"TTS ERROR: {e}")
+        print(f"[TEXT] {text}")
+
+
+# =====================================================
 # AUDIO / GEMINI CONSTANTS
 # =====================================================
-import pyaudio as _pyaudio
+try:
+    import pyaudio as _pyaudio
+    FORMAT = _pyaudio.paInt16
+except ImportError:
+    _pyaudio = None
+    FORMAT = None
 
-FORMAT              = _pyaudio.paInt16
 CHANNELS             = 1
 SEND_SAMPLE_RATE     = 16000
 RECEIVE_SAMPLE_RATE  = 24000
@@ -239,6 +482,10 @@ MODEL                = "models/gemini-2.5-flash-native-audio-latest"
 # How long to wait after the user stops speaking before treating the
 # accumulated transcript as a complete disaster report worth analyzing.
 REPORT_SILENCE_GAP_SECONDS = 2.5
+
+# How long after an "ask" / photo question we keep treating the model's
+# spoken reply as a Q&A answer rather than a fresh disaster-report transcript.
+QA_REPLY_WINDOW_SECONDS = 15.0
 
 
 # =====================================================
@@ -261,6 +508,12 @@ Your job during this voice session:
   conversation. Describe what you see in disaster-relevant terms: damage
   severity, flooding extent, structural risk, visible hazards, number of
   people, and anything relevant to an emergency response decision.
+- The user may also ask you direct questions unrelated to a specific photo
+  (general "ask" queries). Answer briefly and directly using whatever
+  report/briefing context is available.
+- The user may share an approximate current location with you as context;
+  treat it as authoritative for the report's location unless contradicted
+  by the spoken report itself.
 - Ask short, targeted clarifying questions ONLY if the location or disaster
   type is unclear and ONLY one question at a time. Do not interrogate.
 - Once a report has enough detail (disaster type + location, at minimum),
@@ -279,6 +532,81 @@ Your job during this voice session:
 # =====================================================
 # CAMERA WORKER — 30 fps, OpenCV window
 # =====================================================
+def _auto_scan_worker():
+    """Background thread: periodically grabs the latest camera frame and runs
+    vision analysis + ML pipeline WITHOUT blocking the live camera feed."""
+    import tempfile, os
+    from utils.vision_report_generator import generate_incident_report
+    from utils.pipeline import analyze_report
+    from utils.storage import save_incident
+
+    AUTO_SCAN_INTERVAL = 30
+    os.makedirs("data/reports", exist_ok=True)
+
+    while _store.running:
+        time.sleep(AUTO_SCAN_INTERVAL)
+        if not _store.running:
+            break
+
+        frame = get_frame()
+        if frame is None:
+            continue
+
+        try:
+            _, jpeg = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+            raw = bytes(jpeg)
+
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+            tmp.write(raw)
+            tmp_path = tmp.name
+            tmp.close()
+
+            print("\n🔍 AUTO-SCAN: Analyzing camera frame for disasters...")
+            analysis = generate_incident_report(tmp_path)
+            os.unlink(tmp_path)
+
+            if "DISASTER TYPE:" in analysis or "FLOOD" in analysis.upper() or "EARTHQUAKE" in analysis.upper() or "FIRE" in analysis.upper() or "LANDSLIDE" in analysis.upper():
+                print("🚨 AUTO-SCAN: Disaster detected! Running ML pipeline...")
+                result = analyze_report(analysis)
+                disaster = result.get("disaster", "Unknown")
+                location = result.get("location", "Unknown")
+                severity = result.get("severity", "Unknown")
+
+                with _store.lock:
+                    _store.last_briefing = result.get("briefing", "")
+                    _store.last_report_text = analysis
+
+                report_text = f"""
+🚨 AUTO-DETECTED DISASTER FROM LIVE CAMERA
+===========================================
+Disaster: {disaster}
+Location: {location}
+Severity: {severity}
+Authenticity: {result.get('authenticity', 'Unknown')}
+
+ALERTS:
+Citizen: {result.get('citizen_alert', 'N/A')}
+NGO: {result.get('ngo_alert', 'N/A')}
+Government: {result.get('government_alert', 'N/A')}
+
+AI BRIEFING:
+{result.get('briefing', 'N/A')}
+
+VISION ANALYSIS:
+{analysis}
+                """.strip()
+
+                rpath = os.path.join("data/reports", f"auto_cam_scan_{int(time.time())}.txt")
+                with open(rpath, "w", encoding="utf-8") as f:
+                    f.write(report_text)
+                print(f"📁 Auto-scan report saved: {rpath}")
+                print("✅ AUTO-SCAN: Pipeline complete — alerts generated & report saved\n")
+            else:
+                print("🔍 AUTO-SCAN: No clear disaster detected in this frame.\n")
+        except Exception as scan_err:
+            print(f"⚠️ AUTO-SCAN error: {scan_err}\n")
+
+
 def camera_worker():
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
@@ -291,6 +619,10 @@ def camera_worker():
 
     print("CAMERA: started — press Q in the video window to quit")
     last_sent = 0.0
+
+    # Start auto-scan in a separate background thread
+    scan_thread = threading.Thread(target=_auto_scan_worker, daemon=True)
+    scan_thread.start()
 
     while _store.running:
         ret, frame = cap.read()
@@ -325,19 +657,30 @@ def camera_worker():
 # =====================================================
 def run_pipeline_and_build_briefing(report_text: str) -> str:
     """
-    Runs the spoken transcript through the full CrisisLens AI pipeline and
-    returns a short spoken-friendly summary of the emergency briefing.
+    🚨 Runs a disaster report (spoken or typed) through the full CrisisLens
+    AI pipeline and returns a short spoken-friendly summary of the emergency
+    briefing.
 
-    This is intentionally short for text-to-speech playback — the full
-    written briefing should still be generated and saved/displayed in your
-    main Streamlit app; here we only need a spoken digest.
+    Side effect: stores the report text and the full written briefing in
+    the session store (_store.last_report_text / _store.last_briefing) so
+    other features — 🔊 Read Response, 📧 Send Alert, 📱 Send SMS — can
+    reuse the latest analysis without re-running the pipeline.
     """
+    with _store.lock:
+        _store.last_report_text = report_text
+
     if not PIPELINE_AVAILABLE:
-        return ("Pipeline modules are not available. "
-                "Please run this from the CrisisLens AI project root.")
+        msg = ("Pipeline modules are not available. "
+               "Please run this from the CrisisLens AI project root.")
+        with _store.lock:
+            _store.last_briefing = msg
+        return msg
 
     if not report_text or not report_text.strip():
-        return "No report content was captured to analyze."
+        msg = "No report content was captured to analyze."
+        with _store.lock:
+            _store.last_briefing = msg
+        return msg
 
     try:
         disaster     = classify_disaster(report_text)
@@ -354,10 +697,26 @@ def run_pipeline_and_build_briefing(report_text: str) -> str:
                 f"Please verify with N D M A or P D M A before taking action."
             )
             print("\n" + "=" * 60)
-            print("VOICE REPORT — FLAGGED AS SUSPICIOUS / FAKE")
+            print("REPORT — FLAGGED AS SUSPICIOUS / FAKE")
             print(f"Disaster: {disaster} | Location: {location} | "
                   f"Severity: {severity} | Authenticity: {authenticity}")
             print("=" * 60 + "\n")
+            with _store.lock:
+                _store.last_briefing = spoken
+            try:
+                from utils.storage import save_incident
+                save_incident({
+                    "disaster": disaster,
+                    "location": location,
+                    "severity": severity,
+                    "authenticity": authenticity,
+                    "report": report_text,
+                    "briefing": "FAKE/SUSPICIOUS — no briefing generated",
+                    "source": "voice",
+                    "timestamp": time.time(),
+                })
+            except Exception:
+                pass
             return spoken
 
         briefing = generate_relief_plan(
@@ -369,11 +728,54 @@ def run_pipeline_and_build_briefing(report_text: str) -> str:
         )
 
         print("\n" + "=" * 60)
-        print("VOICE REPORT — FULL BRIEFING GENERATED")
+        print("REPORT — FULL BRIEFING GENERATED")
         print(f"Disaster: {disaster} | Location: {location} | Severity: {severity}")
         print("-" * 60)
         print(briefing)
         print("=" * 60 + "\n")
+
+        with _store.lock:
+            _store.last_briefing = briefing
+
+        # ── Save to incidents.json + data/reports/ ──
+        try:
+            from utils.storage import save_incident
+            save_incident({
+                "disaster": disaster,
+                "location": location,
+                "severity": severity,
+                "authenticity": authenticity,
+                "report": report_text,
+                "briefing": briefing,
+                "source": "voice",
+                "timestamp": time.time(),
+            })
+            import os as _os2
+            _os2.makedirs("data/reports", exist_ok=True)
+            report_path = _os2.path.join("data/reports", f"voice_report_{int(time.time())}.txt")
+            full_report = f"""
+🚨 VOICE REPORT — AUTO GENERATED
+================================
+Disaster: {disaster}
+Location: {location}
+Severity: {severity}
+Authenticity: {authenticity}
+
+ALERTS (generated by alert engine):
+(Open the Streamlit app to view full alerts)
+
+AI BRIEFING:
+{briefing}
+
+ORIGINAL REPORT:
+{report_text}
+            """.strip()
+            with open(report_path, "w", encoding="utf-8") as f:
+                f.write(full_report)
+            print(f"📁 Voice report saved: {report_path}")
+            print(f"💾 Incident saved to incidents.json")
+        except Exception as save_err:
+            print(f"⚠️ Could not save report: {save_err}")
 
         spoken = (
             f"Briefing ready. {disaster} reported in {location}. "
@@ -386,7 +788,10 @@ def run_pipeline_and_build_briefing(report_text: str) -> str:
 
     except Exception as e:
         traceback.print_exc()
-        return f"Pipeline error while analyzing the report: {e}"
+        msg = f"Pipeline error while analyzing the report: {e}"
+        with _store.lock:
+            _store.last_briefing = msg
+        return msg
 
 
 # =====================================================
@@ -402,6 +807,9 @@ class CrisisLensVoiceCommander:
         self._last_text_time = 0.0
         self._analysis_lock  = asyncio.Lock()
         self._analyzing      = False
+        # When set in the future, model replies are treated as Q&A answers
+        # (🤖 ask / photo Q&A) rather than disaster-report transcript text.
+        self._qa_mode_until  = 0.0
 
     # ---------------- Microphone capture ----------------
 
@@ -472,11 +880,21 @@ class CrisisLensVoiceCommander:
                     if not _store.running:
                         break
 
-                    # Capture spoken transcript text (for pipeline analysis)
+                    # Capture spoken transcript text. While a 🤖 ask / photo
+                    # Q&A is in flight, treat this as a Q&A answer instead of
+                    # disaster-report transcript so it doesn't get fed into
+                    # the pipeline by mistake.
                     if hasattr(response, "text") and response.text:
-                        print(f"COMMANDER: {response.text}")
-                        self._pending_transcript_parts.append(response.text)
-                        self._last_text_time = time.time()
+                        if time.time() < self._qa_mode_until:
+                            with _store.lock:
+                                _store.last_ai_response = (
+                                    (_store.last_ai_response or "") + response.text
+                                )
+                            print(f"AI ASSISTANT: {response.text}")
+                        else:
+                            print(f"COMMANDER: {response.text}")
+                            self._pending_transcript_parts.append(response.text)
+                            self._last_text_time = time.time()
 
                     audio_data = None
 
@@ -501,6 +919,29 @@ class CrisisLensVoiceCommander:
                 if not _store.running:
                     break
                 await asyncio.sleep(0.1)
+
+    # ---------------- Speak text back through the live session ----------
+
+    async def _speak_via_session(self, spoken_summary: str):
+        """
+        Pushes a short text into the live Gemini session so it gets spoken
+        aloud verbatim through the voice channel. Shared by the automatic
+        silence-triggered analysis and the manual 🚨 'analyze' / 📝 'report:'
+        commands.
+        """
+        if self.session and _store.running:
+            try:
+                await self.session.send_client_content(
+                    turns={"role": "user", "parts": [{
+                        "text": (
+                            "[SYSTEM: Speak this emergency briefing summary "
+                            f"aloud verbatim, calmly and clearly: \"{spoken_summary}\"]"
+                        )
+                    }]},
+                    turn_complete=True,
+                )
+            except Exception as e:
+                print(f"FAILED TO SEND BRIEFING TO SESSION: {e}")
 
     # ---------------- Report completion watcher ----------------
 
@@ -533,23 +974,7 @@ class CrisisLensVoiceCommander:
                 spoken_summary = await asyncio.to_thread(
                     run_pipeline_and_build_briefing, report_text
                 )
-
-                # Send the spoken summary back into the live session so the
-                # model speaks it out loud to the user.
-                if self.session and _store.running:
-                    try:
-                        await self.session.send_client_content(
-                            turns={"role": "user", "parts": [{
-                                "text": (
-                                    "[SYSTEM: Speak this emergency briefing "
-                                    f"summary aloud verbatim, calmly and clearly: "
-                                    f"\"{spoken_summary}\"]"
-                                )
-                            }]},
-                            turn_complete=True,
-                        )
-                    except Exception as e:
-                        print(f"FAILED TO SEND BRIEFING TO SESSION: {e}")
+                await self._speak_via_session(spoken_summary)
 
                 self._analyzing = False
 
@@ -564,7 +989,12 @@ class CrisisLensVoiceCommander:
         from google.genai import types
 
         if not self.session or not _store.running:
+            print("No active session to ask.")
             return
+
+        with _store.lock:
+            _store.last_ai_response = ""
+        self._qa_mode_until = time.time() + QA_REPLY_WINDOW_SECONDS
 
         prompt_text = (
             f"[SYSTEM: The user is asking about photo {photo['id']} "
@@ -588,20 +1018,79 @@ class CrisisLensVoiceCommander:
         except Exception as e:
             print(f"PHOTO Q&A ERROR: {e}")
 
+    # ---------------- 🤖 Generic AI assistant Q&A ----------------
+
+    async def send_ai_assistant_question(self, question: str):
+        """
+        Sends a direct question to the live session that is NOT tied to a
+        specific photo — e.g. "ask what should we prioritize first". Uses
+        whatever report/briefing context is already available.
+        """
+        if not self.session or not _store.running:
+            print("No active session to ask.")
+            return
+
+        with _store.lock:
+            _store.last_ai_response = ""
+            context_bits = []
+            if _store.last_report_text:
+                context_bits.append(f"Last report: {_store.last_report_text}")
+            if _store.last_briefing:
+                context_bits.append(f"Last briefing: {_store.last_briefing}")
+        context = " ".join(context_bits) if context_bits else "none yet"
+
+        self._qa_mode_until = time.time() + QA_REPLY_WINDOW_SECONDS
+
+        prompt_text = (
+            f"[SYSTEM: The operator is asking the AI assistant a direct "
+            f"question, not tied to a specific photo. Context so far: "
+            f"{context}. Question: \"{question}\". Answer briefly and "
+            f"directly in 1-3 sentences.]"
+        )
+
+        try:
+            await self.session.send_client_content(
+                turns={"role": "user", "parts": [{"text": prompt_text}]},
+                turn_complete=True,
+            )
+            print(f"AI ASSISTANT: asked -> '{question}'")
+        except Exception as e:
+            print(f"ASK AI ERROR: {e}")
+
+    # ---------------- Console command handling ----------------
+
+    def _print_help(self):
+        print("""
+Available console commands:
+  📝 report: <text>              — submit a typed disaster report for analysis
+     submit report <text>
+  📷 upload photo <path>         — add a photo from disk
+  📸 take photo / capture photo  — capture a photo from the live camera
+     list photos                — list all photos in this session
+     ask about photo <n>: <q>   — ask the AI about a specific photo (vision)
+  📍 location                   — show approximate current location
+     current location / where am i
+  🚨 analyze / analyze incident — force-analyze the report right now
+  🤖 ask <question>             — ask the AI assistant a direct question
+  🔊 read / read response       — read the last answer/briefing aloud (offline TTS)
+  📧 send alert [to <email>]    — email the latest briefing
+  📱 send sms [to <phone>]      — text the latest briefing
+     help                       — show this list again
+(🎤 voice reports work automatically any time you speak into the mic)
+""")
+
     async def handle_text_command(self, raw_text: str):
         """
-        Handles a typed (or transcribed) command from the operator console:
-          - 'upload photo <path>'
-          - 'take photo' / 'capture photo'
-          - 'photo <n> <question>' / 'ask about photo <n>: <question>'
-          - 'what do you see in the last photo'
-          - anything else -> ignored here (spoken reports go through the
-            normal mic pipeline instead)
+        Handles a typed (or transcribed) command from the operator console.
+        See _print_help() / module docstring for the full command list.
         """
         text = raw_text.strip()
         text_l = text.lower()
 
-        # --- Upload photo from path ---
+        if not text:
+            return
+
+        # --- 📷 Upload photo from path ---
         if text_l.startswith("upload photo"):
             path = text[len("upload photo"):].strip().strip('"').strip("'")
             try:
@@ -612,7 +1101,7 @@ class CrisisLensVoiceCommander:
                 print(f"UPLOAD FAILED: {e}")
             return
 
-        # --- Capture photo from camera ---
+        # --- 📸 Capture photo from camera ---
         if text_l in ("take photo", "take a photo", "capture photo", "capture a photo"):
             try:
                 photo = await asyncio.to_thread(add_photo_from_camera)
@@ -632,8 +1121,7 @@ class CrisisLensVoiceCommander:
                     print(f"  Photo {p['id']} — source: {p['source']} — path: {p['path']}")
             return
 
-        # --- Ask about a specific / the last photo ---
-        # Patterns: "ask about photo 2: <question>" or "photo 2 <question>"
+        # --- Ask about a specific / numbered photo (vision Q&A) ---
         m = re.match(r"(?:ask about\s+)?photo\s*(?:number\s*)?(\d+)\s*[:\-]?\s*(.*)", text_l)
         if m:
             photo_id = int(m.group(1))
@@ -645,7 +1133,97 @@ class CrisisLensVoiceCommander:
             await self.send_photo_question(photo, question)
             return
 
-        # Generic reference: "what do you see in the last photo", "describe this picture"
+        # --- 📧 Send Alert (email) ---
+        m = re.match(r"send alert(?:\s+to\s+(\S+))?", text, re.IGNORECASE)
+        if m:
+            to_email = m.group(1)
+            body = _store.last_briefing or _store.last_report_text
+            if not body:
+                print("Nothing to alert on yet. Submit a report ('report: ...') or 'analyze' first.")
+                return
+            try:
+                result = await asyncio.to_thread(
+                    send_email_alert, "CrisisLens AI — Emergency Alert", body, to_email
+                )
+                print(f"-> {result}")
+            except Exception as e:
+                print(f"SEND ALERT ERROR: {e}")
+            return
+
+        # --- 📱 Send SMS ---
+        m = re.match(r"send sms(?:\s+to\s+(\S+))?", text, re.IGNORECASE)
+        if m:
+            to_phone = m.group(1)
+            body = _store.last_briefing or _store.last_report_text
+            if not body:
+                print("Nothing to text out yet. Submit a report ('report: ...') or 'analyze' first.")
+                return
+            try:
+                result = await asyncio.to_thread(send_sms_alert, body, to_phone)
+                print(f"-> {result}")
+            except Exception as e:
+                print(f"SEND SMS ERROR: {e}")
+            return
+
+        # --- 📍 Current location ---
+        if text_l in ("location", "current location", "where am i", "get location"):
+            try:
+                loc = await asyncio.to_thread(get_current_location)
+                print(f"-> Approximate location: {loc['address']} "
+                      f"(lat {loc['lat']}, lon {loc['lon']})")
+            except Exception as e:
+                print(f"LOCATION ERROR: {e}")
+            return
+
+        # --- 🚨 Analyze incident (manual trigger, doesn't wait for silence) ---
+        if text_l in ("analyze", "analyze incident", "analyse", "analyse incident"):
+            if self._pending_transcript_parts:
+                report_text = " ".join(self._pending_transcript_parts).strip()
+                self._pending_transcript_parts = []
+            else:
+                report_text = _store.last_report_text
+            if not report_text:
+                print("No report text available yet. Speak a report, type 'report: ...', or wait for transcript.")
+                return
+            print("\nANALYZING INCIDENT (manual trigger)...\n")
+            spoken_summary = await asyncio.to_thread(run_pipeline_and_build_briefing, report_text)
+            print(f"BRIEFING SUMMARY: {spoken_summary}")
+            await self._speak_via_session(spoken_summary)
+            return
+
+        # --- 🔊 Read last response aloud (offline TTS) ---
+        if text_l in ("read", "read response", "read last response", "read aloud"):
+            text_to_read = _store.last_ai_response or _store.last_briefing or _store.last_report_text
+            if not text_to_read:
+                print("Nothing to read yet — ask a question, submit a report, or wait for a briefing first.")
+                return
+            print("\n🔊 Reading aloud...\n")
+            await asyncio.to_thread(speak_text_locally, text_to_read)
+            return
+
+        # --- 📝 Typed text report ---
+        m = re.match(r"(?:submit report|report)\b\s*[:\-]?\s*(.+)", text, re.IGNORECASE)
+        if m and len(m.group(1).strip()) > 3:
+            report_text = m.group(1).strip()
+            print("\nANALYZING TYPED REPORT...\n")
+            spoken_summary = await asyncio.to_thread(run_pipeline_and_build_briefing, report_text)
+            print(f"BRIEFING SUMMARY: {spoken_summary}")
+            await self._speak_via_session(spoken_summary)
+            return
+
+        # --- 🤖 Ask AI assistant (generic, non-photo question) ---
+        if text_l.startswith("ask "):
+            question = text[4:].strip()
+            if question:
+                await self.send_ai_assistant_question(question)
+            return
+
+        # --- Help ---
+        if text_l in ("help", "commands", "?"):
+            self._print_help()
+            return
+
+        # --- Generic photo reference fallback: "the last photo", "this picture", etc. ---
         photo = resolve_photo_reference(text_l)
         if photo is not None:
             await self.send_photo_question(photo, text)
@@ -654,15 +1232,11 @@ class CrisisLensVoiceCommander:
     async def listen_console_commands(self):
         """
         Reads typed commands from stdin in a background thread so the
-        operator can type 'upload photo path/to/file.jpg', 'take photo',
-        or 'ask about photo 1: ...' alongside the live voice session.
+        operator can use any console feature alongside the live voice
+        session.
         """
         loop = asyncio.get_event_loop()
-        print("\nTYPE COMMANDS HERE (voice keeps working at the same time):")
-        print("  upload photo <path>")
-        print("  take photo")
-        print("  list photos")
-        print("  ask about photo <n>: <question>\n")
+        self._print_help()
 
         while _store.running:
             try:
@@ -754,6 +1328,19 @@ def main():
         )
         print("Gemini client OK")
 
+        print("\nFeature availability:")
+        print(f"  Pipeline (classify/severity/relief plan): "
+              f"{'OK' if PIPELINE_AVAILABLE else 'MISSING - utils/ not importable'}")
+        print(f"  📍 Location lookup (requests):             "
+              f"{'OK' if REQUESTS_AVAILABLE else 'MISSING - pip install requests'}")
+        print(f"  🔊 Offline read-aloud (pyttsx3):            "
+              f"{'OK' if PYTTSX3_AVAILABLE else 'MISSING - pip install pyttsx3'}")
+        print(f"  📱 SMS alerts (twilio):                     "
+              f"{'OK' if TWILIO_AVAILABLE else 'MISSING - pip install twilio'}")
+        print(f"  📧 Email alerts (SMTP):                     "
+              f"{'OK' if (SMTP_USER and SMTP_PASSWORD) else 'NOT CONFIGURED - set SMTP_USER/SMTP_PASSWORD in .env'}")
+        print()
+
         _store.running = True
 
         threading.Thread(target=camera_worker, daemon=True).start()
@@ -786,7 +1373,8 @@ def main():
 if __name__ == "__main__":
     print("=" * 60)
     print("  CrisisLens AI — Live Voice Commander")
-    print("  Speak a disaster report. Press Q in the camera window")
-    print("  or Ctrl+C in this terminal to stop.")
+    print("  Speak or type a disaster report. Type 'help' for all")
+    print("  console commands. Press Q in the camera window or")
+    print("  Ctrl+C in this terminal to stop.")
     print("=" * 60)
     main()

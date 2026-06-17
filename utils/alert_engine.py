@@ -10,7 +10,7 @@ class AlertEngine:
         authenticity
     ):
 
-        if authenticity.lower() in ["fake", "suspicious"]:
+        if authenticity and authenticity.lower() in ["fake", "suspicious"]:
 
             return {
                 "citizen": "⚠ Report requires verification.",

@@ -1,0 +1,112 @@
+🚨 AUTO-DETECTED DISASTER FROM LIVE CAMERA
+===========================================
+Disaster: Earthquake
+Location: Pakistan
+Severity: Critical
+Authenticity: Likely Real
+
+ALERTS:
+Citizen: 
+🚨 EARTHQUAKE ALERT
+
+Location: Pakistan
+Severity: Critical
+
+ENGLISH:
+
+• Drop, Cover and Hold On
+• Stay away from windows
+• Move to open areas after shaking
+• Avoid damaged buildings
+• Keep emergency kit ready
+
+اردو:
+
+• جھک جائیں، پناہ لیں، مضبوطی سے پکڑیں
+• کھڑکیوں سے دور رہیں
+• زلزلہ رکنے کے بعد کھلی جگہ جائیں
+• متاثرہ عمارتوں سے دور رہیں
+• ہنگامی سامان تیار رکھیں
+
+NGO: 
+🚨 NGO PRIORITY RESPONSE ALERT
+
+Disaster: Earthquake
+Location: Pakistan
+Severity: Critical
+
+Recommended Actions:
+
+1. Deploy assessment teams
+2. Prioritize vulnerable populations
+3. Establish temporary shelters
+4. Arrange food distribution
+5. Arrange clean drinking water
+6. Deploy medical support
+7. Coordinate with local authorities
+
+Priority Area:
+Pakistan
+
+Response Level:
+Critical
+
+Government: 
+🚨 GOVERNMENT RESPONSE ALERT
+
+Disaster: Earthquake
+Location: Pakistan
+Severity: Critical
+
+Immediate Actions:
+
+• Activate emergency response center
+• Coordinate NDMA and PDMA
+• Deploy Rescue 1122 teams
+• Monitor hospitals
+• Ensure law and order
+• Monitor transportation routes
+
+Priority Deployment Zone:
+Pakistan
+
+Recommended Response Level:
+Critical
+
+
+AI BRIEFING:
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+VISION ANALYSIS:
+**LOCATION:**
+Not identifiable from the image. No specific landmarks, architecture, text, or unique terrain features are visible to pinpoint a city, district, or province within Pakistan. The background appears to be a plain, light-colored wall, common in various domestic or simple building settings across many regions.
+
+**DISASTER TYPE:**
+Not discernible from the image. The image solely depicts a person against a plain background, with no visible signs or indications of any disaster type (e.g., flood, earthquake, fire, landslide, storm, accident). There is no damage, debris, emergency services, or distressed environment depicted.
+
+**SEVERITY:**
+Not applicable, as no disaster type or event is identifiable from the image.
+
+**VISIBLE DAMAGE:**
+None. The image primarily features a person. The background is a plain, light-colored wall that shows no signs of structural damage, cracks, debris, water marks, burn marks, or any other environmental impact typically associated with a disaster. The individual also does not appear to have visible injuries or be in a distressed state related to a disaster.
+
+**RISKS:**
+No specific risks related to a disaster can be identified or inferred from this image, as no disaster event or its aftermath is depicted.
+
+**INCIDENT REPORT:**
+
+**Date of Analysis:** November 27, 2023
+**Image Reference:** Provided image
+**Analyst:** Emergency Disaster Intelligence Analyst
+
+**Summary:**
+The uploaded image has been analyzed for disaster-related intelligence for Pakistan. The image features an individual (appears to be a male with a beard and wearing a black cap, with a yellow flower tucked into his hair) against a plain, light-colored background.
+
+**Key Findings:**
+1.  **Location:** No specific geographical identifiers (landmarks, text, distinctive architecture, or terrain) are present in the image to determine a precise city, district, or province in Pakistan. The setting appears generic.
+2.  **Disaster Type:** Crucially, there is no visual evidence within the image to suggest any type of disaster (e.g., flood, earthquake, fire, landslide, storm, accident). The environment depicted is calm and shows no signs of an ongoing or recent catastrophic event.
+3.  **Damage:** No visible damage to infrastructure, property, or the environment is present. The background wall appears intact and unremarkable.
+4.  **Risks:** Without an identifiable disaster, no specific immediate risks to people or infrastructure can be assessed from this visual data.
+
+**Conclusion:**
+Based on the visual information provided, the image does not depict a disaster situation or its aftermath. Therefore, it does not offer intelligence pertinent to disaster type, severity, visible damage, or immediate risks. The image appears to be a personal portrait or selfie rather than documentation of an emergency event. Further information or contextual data would be required to assess any disaster relevance.

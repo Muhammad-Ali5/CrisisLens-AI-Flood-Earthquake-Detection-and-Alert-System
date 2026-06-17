@@ -1,0 +1,114 @@
+🚨 AUTO-DETECTED DISASTER FROM LIVE CAMERA
+===========================================
+Disaster: Earthquake
+Location: Pakistan
+Severity: High
+Authenticity: Likely Real
+
+ALERTS:
+Citizen: 
+🚨 EARTHQUAKE ALERT
+
+Location: Pakistan
+Severity: High
+
+ENGLISH:
+
+• Drop, Cover and Hold On
+• Stay away from windows
+• Move to open areas after shaking
+• Avoid damaged buildings
+• Keep emergency kit ready
+
+اردو:
+
+• جھک جائیں، پناہ لیں، مضبوطی سے پکڑیں
+• کھڑکیوں سے دور رہیں
+• زلزلہ رکنے کے بعد کھلی جگہ جائیں
+• متاثرہ عمارتوں سے دور رہیں
+• ہنگامی سامان تیار رکھیں
+
+NGO: 
+🚨 NGO PRIORITY RESPONSE ALERT
+
+Disaster: Earthquake
+Location: Pakistan
+Severity: High
+
+Recommended Actions:
+
+1. Deploy assessment teams
+2. Prioritize vulnerable populations
+3. Establish temporary shelters
+4. Arrange food distribution
+5. Arrange clean drinking water
+6. Deploy medical support
+7. Coordinate with local authorities
+
+Priority Area:
+Pakistan
+
+Response Level:
+High
+
+Government: 
+🚨 GOVERNMENT RESPONSE ALERT
+
+Disaster: Earthquake
+Location: Pakistan
+Severity: High
+
+Immediate Actions:
+
+• Activate emergency response center
+• Coordinate NDMA and PDMA
+• Deploy Rescue 1122 teams
+• Monitor hospitals
+• Ensure law and order
+• Monitor transportation routes
+
+Priority Deployment Zone:
+Pakistan
+
+Recommended Response Level:
+High
+
+
+AI BRIEFING:
+Agent Error: Error code: 401 - {'error': {'message': 'Invalid API Key', 'type': 'invalid_request_error', 'code': 'invalid_api_key'}}
+
+VISION ANALYSIS:
+LOCATION:
+No specific geographical identifiers (e.g., text, landmarks, unique architectural styles, terrain, or vegetation) are present in the image to determine a precise city, district, or province within Pakistan. The setting appears to be a generic indoor environment with a plain wall and simple furniture, which is common across various regions of Pakistan. Therefore, a specific location cannot be identified from this image alone.
+
+DISASTER TYPE:
+None identified. There are no indicators of any disaster type (e.g., Flood, Earthquake, Fire, Landslide, Storm, Accident) in the image. The environment appears stable and intact, and the individual shows no signs of injury, distress, or being affected by a disaster.
+
+SEVERITY:
+Not applicable, as no disaster or emergency situation has been identified. Based on the visible information, there is no emergency or critical situation depicted.
+
+VISIBLE DAMAGE:
+There is no visible damage to property, infrastructure, or the individual depicted in the image. The wall in the background is intact, and the visible furniture appears undamaged.
+
+RISKS:
+Based purely on the provided image, there are no identifiable immediate risks to people or infrastructure. The scene does not suggest any ongoing or impending danger.
+
+INCIDENT REPORT:
+**Emergency Disaster Intelligence Report**
+
+**Date of Analysis:** October 26, 2023
+
+**Source Image:** Uploaded image (portrait of a man indoors)
+
+**Analysis Objective:** To identify location, disaster type, severity, visible damage, and risks based on the provided visual information for disaster intelligence purposes within Pakistan.
+
+**Findings:**
+
+1.  **Location:** The image presents a generic indoor setting with a plain, light-colored wall and a glimpse of patterned fabric on what appears to be furniture. No identifiable text, distinct architectural features, landmarks, specific vegetation, or unique terrain are visible to pinpoint a particular city, district, or province within Pakistan.
+2.  **Disaster Type:** No indicators of any disaster event (such as flooding, structural collapse from an earthquake, fire, landslide debris, storm damage, or signs of an accident) are present. The background appears stable and undamaged.
+3.  **Severity:** As no disaster or emergency situation is identified, the concept of severity is not applicable. The scene conveys a normal, non-emergency environment.
+4.  **Visible Damage:** No visible damage to any person, property, or infrastructure is observed in the image. The wall, the individual, and the visible furniture appear intact and unharmed.
+5.  **Risks:** Based on the current visual evidence, there are no identifiable immediate risks to people or infrastructure. The individual appears calm, and the environment shows no signs of danger or disruption.
+
+**Conclusion:**
+The provided image does not depict any disaster, emergency situation, or visible damage. It appears to be a casual portrait taken in an indoor setting. No specific geographical location within Pakistan can be determined from the visual context. Consequently, there are no disaster-related risks or severity levels to report based on this image. Further context or additional imagery would be required for a disaster intelligence assessment.

@@ -41,6 +41,12 @@ print("LOADING & PARSING ALL 3 DATASETS")
 print("=" * 60)
 
 # Alag-alag datasets load karna
+try:
+    df1 = pd.read_csv("earthquake_data_v1.csv")
+except FileNotFoundError:
+    print("WARNING: earthquake_data_v1.csv not found, creating empty placeholder.")
+    df1 = pd.DataFrame(columns=["latitude", "longitude", "magnitude", "date_time", "alert"])
+
 df2 = pd.read_csv("earthquake_data.csv")
 df3 = pd.read_csv("earthquake_1995-2023.csv")
 

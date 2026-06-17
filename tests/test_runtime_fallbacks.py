@@ -12,7 +12,9 @@ class TestRuntimeFallbacks(unittest.TestCase):
         self.assertIn("location", result)
         self.assertIn("severity", result)
         self.assertIn("authenticity", result)
-        self.assertIn("alerts", result)
+        self.assertIn("citizen_alert", result)
+        self.assertIn("ngo_alert", result)
+        self.assertIn("government_alert", result)
         self.assertIn("briefing", result)
 
 
