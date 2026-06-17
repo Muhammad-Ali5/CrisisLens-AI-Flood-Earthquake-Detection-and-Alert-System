@@ -23,6 +23,7 @@ from utils.gemini_relief_agent import generate_relief_plan, chat_with_assistant
 from utils.maps import map_manager
 from utils.vision_report_generator import generate_incident_report
 from utils.pipeline import analyze_report
+from utils.dl_classifier import classify_image
 
 
 
@@ -919,6 +920,44 @@ with photo_tabs[0]:
     saved = st.session_state.photo_capture_bytes is not None and st.session_state.photo_capture_name == "camera_capture.jpg"
     if saved:
         st.image(st.session_state.photo_capture_bytes, caption="📸 Saved photo  |  محفوظ کردہ تصویر", use_container_width=True)
+
+        # ── ML Model Classification on camera capture ──
+        try:
+            dl_bytes = st.session_state.photo_capture_bytes
+            if dl_bytes:
+                with st.spinner("🧠 Running ML models (Earthquake/Flood)  |  ایم ایل ماڈل چل رہے ہیں۔۔۔"):
+                    dl_result = classify_image(dl_bytes)
+            else:
+                dl_result = None
+        except Exception as dl_e:
+            dl_result = {"error": str(dl_e)}
+
+        if dl_result and dl_result.get("dl_prediction"):
+            st.markdown("""<div style="border-top:2px solid #1e2d4a;margin:0.5rem 0"></div>""", unsafe_allow_html=True)
+            st.markdown("### 🧠 ML Model Classification  |  ایم ایل ماڈل کی درجہ بندی")
+            eq_prob = dl_result.get("earthquake_probability")
+            fl_prob = dl_result.get("flood_probability")
+            dl_pred = dl_result.get("dl_prediction", "N/A")
+            dl_conf = dl_result.get("dl_confidence")
+
+            prob_col1, prob_col2 = st.columns(2)
+            with prob_col1:
+                if eq_prob is not None:
+                    st.markdown(f"**🌍 Earthquake  |  زلزلہ:** `{eq_prob*100:.1f}%`")
+                    st.progress(eq_prob)
+            with prob_col2:
+                if fl_prob is not None:
+                    st.markdown(f"**🌊 Flood  |  سیلاب:** `{fl_prob*100:.1f}%`")
+                    st.progress(fl_prob)
+
+            st.markdown(f"""
+            <div style="background:#1a2639;padding:0.8rem 1rem;border-radius:8px;border-left:4px solid #ff4b4b;margin:0.5rem 0">
+                <strong>🤖 DL Model Prediction  |  ماڈیل کی پیش گوئی:</strong><br>
+                <span style="font-size:1.1rem;color:#ff6b6b">{dl_pred}</span>
+                {f'<br><span style="color:#aaa">Confidence  |  اعتماد: <strong>{dl_conf*100:.1f}%</strong></span>' if dl_conf is not None else ''}
+            </div>
+            """, unsafe_allow_html=True)
+
         st.info("✅ Ready for analysis — اب Analyze ٹیب پر جائیں")
         if st.button("🗑️ Clear  |  ہٹائیں", key="clear_cam_photo", use_container_width=True):
             st.session_state.photo_capture_bytes = None
@@ -938,6 +977,50 @@ with photo_tabs[1]:
         st.image(uploaded, caption="📁 Uploaded image  |  اپ لوڈ کردہ تصویر", use_container_width=True)
         st.success(f"✅ Photo uploaded: {uploaded.name} — تصویر اپ لوڈ ہو گئی!")
 
+        # ── ML Model Classification (Earthquake / Flood .h5) ──
+        ml_header_shown = False
+        try:
+            dl_bytes = st.session_state.photo_capture_bytes
+            if dl_bytes:
+                with st.spinner("🧠 Running ML models (Earthquake/Flood)  |  ایم ایل ماڈل چل رہے ہیں۔۔۔"):
+                    dl_result = classify_image(dl_bytes)
+            else:
+                dl_result = None
+        except Exception as dl_e:
+            dl_result = {"error": str(dl_e)}
+
+        if dl_result and dl_result.get("dl_prediction"):
+            ml_header_shown = True
+            st.markdown("""<div style="border-top:2px solid #1e2d4a;margin:1rem 0 0.5rem 0"></div>""", unsafe_allow_html=True)
+            st.markdown("### 🧠 ML Model Classification  |  ایم ایل ماڈل کی درجہ بندی")
+
+            eq_prob = dl_result.get("earthquake_probability")
+            fl_prob = dl_result.get("flood_probability")
+            dl_pred = dl_result.get("dl_prediction", "N/A")
+            dl_conf = dl_result.get("dl_confidence")
+
+            prob_col1, prob_col2 = st.columns(2)
+            with prob_col1:
+                if eq_prob is not None:
+                    pct = eq_prob * 100
+                    bar_color = "red" if pct > 50 else "orange"
+                    st.markdown(f"**🌊 Earthquake  |  زلزلہ:** `{pct:.1f}%`")
+                    st.progress(eq_prob)
+            with prob_col2:
+                if fl_prob is not None:
+                    pct = fl_prob * 100
+                    bar_color = "blue" if pct > 50 else "lightblue"
+                    st.markdown(f"**🌊 Flood  |  سیلاب:** `{pct:.1f}%`")
+                    st.progress(fl_prob)
+
+            st.markdown(f"""
+            <div style="background:#1a2639;padding:0.8rem 1rem;border-radius:8px;border-left:4px solid #ff4b4b;margin-top:0.5rem">
+                <strong>🤖 DL Model Prediction  |  ماڈیل کی پیش گوئی:</strong><br>
+                <span style="font-size:1.1rem;color:#ff6b6b">{dl_pred}</span>
+                {f'<br><span style="color:#aaa">Confidence  |  اعتماد: <strong>{dl_conf*100:.1f}%</strong></span>' if dl_conf is not None else ''}
+            </div>
+            """, unsafe_allow_html=True)
+
         # ── Auto-analyze + pipeline + alerts ──
         try:
             ext = os.path.splitext(uploaded.name)[1] or ".jpg"
@@ -953,7 +1036,7 @@ with photo_tabs[1]:
             st.success("✅ Vision analysis done!  |  بصری تجزیہ مکمل!")
 
             with st.spinner("⚙️ Running ML pipeline + alerts...  |  پائپ لائن چل رہی ہے۔۔۔"):
-                result = analyze_report(analysis)
+                result = analyze_report(analysis, image_bytes=dl_bytes if dl_bytes else None)
 
             st.session_state.photo_report = result
 
@@ -998,6 +1081,19 @@ with photo_tabs[1]:
                 st.caption(f"📍 Map preview: {location} ({map_err})")
 
             # ── Save report to disk (record copy) + ML pipeline ──
+            dl_section = ""
+            if dl_result and dl_result.get("dl_prediction"):
+                dl_section = f"""
+════════════════════════════════════════════════════════════
+🧠 DL MODEL CLASSIFICATION  |  ایم ایل ماڈل کی درجہ بندی
+════════════════════════════════════════════════════════════
+
+Earthquake Probability (زلزلہ کا امکان): {dl_result.get('earthquake_probability', 'N/A')}
+Flood Probability (سیلاب کا امکان): {dl_result.get('flood_probability', 'N/A')}
+DL Prediction (ماڈیل کی پیش گوئی): {dl_result.get('dl_prediction', 'N/A')}
+DL Confidence (اعتماد): {dl_result.get('dl_confidence', 'N/A')}
+"""
+
             report_text = f"""
 ╔══════════════════════════════════════════════════════════╗
 ║          🚨 CRISIS DISASTER REPORT — AUTO-GENERATED      ║
@@ -1008,7 +1104,7 @@ with photo_tabs[1]:
 📍 Location  |  مقام: {location}
 ⚠️ Severity  |  شدت: {severity}
 🔍 Authenticity  |  مستندیت: {authenticity}
-
+{dl_section}
 ════════════════════════════════════════════════════════════
 🚨 ALERTS  |  الرٹس
 ════════════════════════════════════════════════════════════
@@ -1086,6 +1182,42 @@ with photo_tabs[2]:
         if st.session_state.photo_capture_bytes is None:
             st.warning("⚠️ Please take or upload a photo first  |  پہلے تصویر لیں یا اپ لوڈ کریں")
         else:
+            # ── ML Model Classification ──
+            try:
+                dl_bytes = st.session_state.photo_capture_bytes
+                if dl_bytes:
+                    with st.spinner("🧠 Running ML models (Earthquake/Flood)  |  ایم ایل ماڈل چل رہے ہیں۔۔۔"):
+                        dl_result = classify_image(dl_bytes)
+                else:
+                    dl_result = None
+            except Exception as dl_e:
+                dl_result = {"error": str(dl_e)}
+
+            if dl_result and dl_result.get("dl_prediction"):
+                st.markdown("### 🧠 ML Model Classification  |  ایم ایل ماڈل کی درجہ بندی")
+                eq_prob = dl_result.get("earthquake_probability")
+                fl_prob = dl_result.get("flood_probability")
+                dl_pred = dl_result.get("dl_prediction", "N/A")
+                dl_conf = dl_result.get("dl_confidence")
+
+                prob_col1, prob_col2 = st.columns(2)
+                with prob_col1:
+                    if eq_prob is not None:
+                        st.markdown(f"**🌍 Earthquake  |  زلزلہ:** `{eq_prob*100:.1f}%`")
+                        st.progress(eq_prob)
+                with prob_col2:
+                    if fl_prob is not None:
+                        st.markdown(f"**🌊 Flood  |  سیلاب:** `{fl_prob*100:.1f}%`")
+                        st.progress(fl_prob)
+
+                st.markdown(f"""
+                <div style="background:#1a2639;padding:0.8rem 1rem;border-radius:8px;border-left:4px solid #ff4b4b;margin:0.5rem 0">
+                    <strong>🤖 DL Model Prediction  |  ماڈیل کی پیش گوئی:</strong><br>
+                    <span style="font-size:1.1rem;color:#ff6b6b">{dl_pred}</span>
+                    {f'<br><span style="color:#aaa">Confidence  |  اعتماد: <strong>{dl_conf*100:.1f}%</strong></span>' if dl_conf is not None else ''}
+                </div>
+                """, unsafe_allow_html=True)
+
             try:
                 ext = os.path.splitext(st.session_state.photo_capture_name)[1] or ".jpg"
                 with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -1116,11 +1248,48 @@ with photo_tabs[3]:
         if not analysis_text:
             st.warning("⚠️ Please analyze a photo first (Analyze tab)  |  پہلے تصویر کا تجزیہ کریں (تجزیہ والے ٹیب میں)")
         else:
+            # ── Also run DL models if image is available ──
+            dl_bytes = st.session_state.photo_capture_bytes
+            dl_result = None
+            if dl_bytes:
+                with st.spinner("🧠 Running ML models (Earthquake/Flood)  |  ایم ایل ماڈل چل رہے ہیں۔۔۔"):
+                    try:
+                        dl_result = classify_image(dl_bytes)
+                    except Exception:
+                        pass
+
             with st.spinner("⚙️ Running full crisis pipeline...  |  مکمل پائپ لائن چل رہی ہے۔۔۔"):
-                result = analyze_report(analysis_text)
+                result = analyze_report(analysis_text, image_bytes=dl_bytes if dl_bytes else None)
             st.session_state.photo_report = result
 
             st.success("✅ Report generated!  |  رپورٹ تیار!")
+
+            # ── DL Model Results Section ──
+            if dl_result and dl_result.get("dl_prediction"):
+                st.markdown("### 🧠 ML Model Classification  |  ایم ایل ماڈل کی درجہ بندی")
+                eq_prob = dl_result.get("earthquake_probability")
+                fl_prob = dl_result.get("flood_probability")
+                dl_pred = dl_result.get("dl_prediction", "N/A")
+                dl_conf = dl_result.get("dl_confidence")
+
+                prob_col1, prob_col2 = st.columns(2)
+                with prob_col1:
+                    if eq_prob is not None:
+                        st.markdown(f"**🌍 Earthquake  |  زلزلہ:** `{eq_prob*100:.1f}%`")
+                        st.progress(eq_prob)
+                with prob_col2:
+                    if fl_prob is not None:
+                        st.markdown(f"**🌊 Flood  |  سیلاب:** `{fl_prob*100:.1f}%`")
+                        st.progress(fl_prob)
+
+                st.markdown(f"""
+                <div style="background:#1a2639;padding:0.8rem 1rem;border-radius:8px;border-left:4px solid #ff4b4b;margin:0.5rem 0">
+                    <strong>🤖 DL Model Prediction  |  ماڈیل کی پیش گوئی:</strong><br>
+                    <span style="font-size:1.1rem;color:#ff6b6b">{dl_pred}</span>
+                    {f'<br><span style="color:#aaa">Confidence  |  اعتماد: <strong>{dl_conf*100:.1f}%</strong></span>' if dl_conf is not None else ''}
+                </div>
+                """, unsafe_allow_html=True)
+
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(f"**🆘 Disaster  |  آفت:** {result.get('disaster', 'N/A')}")

@@ -159,5 +159,19 @@
         "severity": "Medium",
         "authenticity": "Likely Real",
         "report": "Heavy flooding in Swat district after rains."
+    },
+    {
+        "disaster": "Earthquake",
+        "location": "Islamabad",
+        "severity": "Critical",
+        "authenticity": "Likely Real",
+        "report": "Major earthquake in Islamabad, magnitude 6.5, many buildings collapsed."
+    },
+    {
+        "disaster": "Earthquake",
+        "location": "Pakistan",
+        "severity": "Low",
+        "authenticity": "Likely Real",
+        "report": "Image classified as: Earthquake  |  \u0632\u0644\u0632\u0644\u06c1"
     }
 ]
